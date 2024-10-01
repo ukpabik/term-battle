@@ -15,7 +15,7 @@ public class Main {
     new Thread(new Runnable() {
       @Override
       public void run() {
-        c.test();  // Keep testing for messages from the server
+        c.start();
       }
     }).start();
 
