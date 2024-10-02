@@ -1,4 +1,4 @@
-package com.poke.app.server;
+package com.pkg.app.server;
 
 import java.net.*;
 import java.io.*;
@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.Collections;
 import java.util.Map;
 import java.util.HashMap;
-import com.poke.app.rooms.Room;
+import com.pkg.app.rooms.Room;
 
 // Server class for the Terminal Battle
 public class Server implements Runnable {

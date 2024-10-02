@@ -1,4 +1,4 @@
-package com.poke.app.client;
+package com.pkg.app.client;
 
 import java.net.*;
 import java.io.*;

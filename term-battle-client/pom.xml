@@ -3,7 +3,7 @@
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
-  <groupId>com.poke.app</groupId>
+  <groupId>com.pkg.app</groupId>
   <artifactId>term-battle-client</artifactId>
   <version>1.5</version>
 
@@ -61,7 +61,7 @@
           <artifactId>exec-maven-plugin</artifactId>
           <version>3.0.0</version> <!-- Ensure this is the latest version -->
           <configuration>
-            <mainClass>com.poke.app.Main</mainClass>
+            <mainClass>com.pkg.app.Main</mainClass>
           </configuration>
         </plugin>
 

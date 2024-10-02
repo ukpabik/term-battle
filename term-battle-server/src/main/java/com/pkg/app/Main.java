@@ -1,6 +1,6 @@
-package com.poke.app;
+package com.pkg.app;
 
-import com.poke.app.server.Server;
+import com.pkg.app.server.Server;
 import java.io.IOException;
 
 
