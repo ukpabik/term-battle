@@ -3,13 +3,14 @@ package com.poke.app.rooms;
 import java.util.List;
 import java.util.ArrayList;
 import com.poke.app.server.Server.ClientHandler;
+import java.util.Collections;
 
 // Class that handles room functionality
 public class Room {
   // Room capacity
   private static final int MAX_CAPACITY = 2;
   private String roomName;
-  private List<ClientHandler> clients = new ArrayList<>();
+  private List<ClientHandler> clients = Collections.synchronizedList(new ArrayList<>());
   
 
   public Room(String roomName){
@@ -26,7 +27,8 @@ public class Room {
 
     if (clients.size() < MAX_CAPACITY){
       clients.add(client);
-      broadcast(client.getClientName() + " has joined the room.");
+      client.setCurrentRoom(this);
+      roomBroadcast(client.getClientName() + " has joined the room.", client);
 
 
       return true;
@@ -40,13 +42,18 @@ public class Room {
   // Synchronized method to remove clients from rooms
   public synchronized void removeClient(ClientHandler client) {
     clients.remove(client);
-    broadcast(client.getClientName() + " has left the room.");
+    client.setCurrentRoom(null);
+    roomBroadcast(client.getClientName() + " has left the room.", client);
   }
 
   // Broadcast messages to all clients in the room
-  public void broadcast(String message){
-    for (ClientHandler c: clients){
-      c.sendMessage(message);
+  public void roomBroadcast(String message, ClientHandler excludeClient){
+    synchronized(clients){
+      for (ClientHandler c: clients){
+        if (c != excludeClient){
+          c.sendRoomMessage(message);
+        }
+      }
     }
   }
 
