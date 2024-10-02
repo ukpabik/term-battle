@@ -1,4 +1,6 @@
-# TermBattle Multiplayer Game
+# TermBattle
+
+![WIP](https://img.shields.io/badge/status-WIP-orange)
 
 **Work in Progress....**
 
@@ -6,17 +8,10 @@ TermBattle is a multiplayer terminal-based game inspired by **Pokémon Showdown*
 
 ---
 
-## Features (in progress)
-- **Multiplayer battles:** Connect with other players in real-time and engage in tactical battles.
-- **Terminal-based UI:** A simple, minimalist game interface designed for the terminal.
-- **Turn-based combat mechanics:** Players take turns making moves and strategies to defeat their opponents.
-- **Customization:** Users will be able to customize their respective parties, choosing what Pokemon they want to use.
+## About This Project
 
+I'm having a lot of fun developing **TermBattle**, and it's giving me a way to learn more about things I am interested in, including: 
+- **Server/Client Connections:** Building an efficient communication system between a server and multiple clients to ensure smooth real-time interactions.
+- **TCP Protocol:** Implementing reliable data transmission using TCP to handle the complexities of real-time multiplayer gaming.
+- **Game Logic:** Designing and implementing the core mechanics that make battles strategic and engaging for players.
 
-
-## Contact
-
-For questions or feedback, contact me:
-
-- **Email**: kelechiukp@gmail.com
-- **GitHub**: [ukpabik](https://github.com/ukpabik)
