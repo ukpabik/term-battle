@@ -4,7 +4,7 @@
 
 **Work in Progress....**
 
-TermBattle is a multiplayer terminal-based game inspired by **Pokémon Showdown**, where players can battle each other in real-time through the command line interface. The game is currently under development, and I am actively working on adding features and improving gameplay.
+TermBattle is a multiplayer terminal-based game, where players can battle each other in real-time through the command line interface. The game is currently under development, and I am actively working on adding features and improving gameplay.
 
 ---
 
