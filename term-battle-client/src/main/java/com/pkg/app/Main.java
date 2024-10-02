@@ -1,6 +1,6 @@
-package com.poke.app;
+package com.pkg.app;
 
-import com.poke.app.client.Client;
+import com.pkg.app.client.Client;
 import java.util.Scanner;
 
 // Initializes client

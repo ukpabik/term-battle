@@ -1,8 +1,8 @@
-package com.poke.app.rooms;
+package com.pkg.app.rooms;
 
 import java.util.List;
 import java.util.ArrayList;
-import com.poke.app.server.Server.ClientHandler;
+import com.pkg.app.server.Server.ClientHandler;
 import java.util.Collections;
 
 // Class that handles room functionality
