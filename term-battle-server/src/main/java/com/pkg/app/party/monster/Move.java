@@ -17,7 +17,6 @@ public class Move {
   }
 
 
-
   public String getName() {
     return name;
   }

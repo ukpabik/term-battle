@@ -4,14 +4,15 @@ import java.util.List;
 import java.util.ArrayList;
 import com.pkg.app.server.Server.ClientHandler;
 import java.util.Collections;
+import com.pkg.app.party.monster.Monster;
 
-// Class that handles room functionality
+
+// This class represents a room in the game. It has a list of clients in the room
 public class Room {
   // Room capacity
   private static final int MAX_CAPACITY = 2;
   private String roomName;
   private List<ClientHandler> clients = Collections.synchronizedList(new ArrayList<>());
-  
 
   public Room(String roomName){
     this.roomName = roomName;
@@ -29,8 +30,6 @@ public class Room {
       clients.add(client);
       client.setCurrentRoom(this);
       roomBroadcast(client.getClientName() + " has joined the room.", client);
-
-
       return true;
     }
     else {
