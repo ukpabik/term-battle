@@ -14,5 +14,5 @@ I'm having a lot of fun developing **TermBattle**, and it's giving me a way to l
 - **Server/Client Connections:** Building an efficient communication system between a server and multiple clients to ensure smooth real-time interactions.
 - **TCP Protocol:** Implementing reliable data transmission using TCP to handle the complexities of real-time multiplayer gaming.
 - **Game Logic:** Designing and implementing the core mechanics that make battles strategic and engaging for players.
-- **Databases:** Utilizing SQL and NoSQL systems, including PostgreSQL, to efficiently manage and store persistent server data.
+- **Databases:** Utilizing SQL or NoSQL systems, including PostgreSQL, to efficiently manage and store persistent server data.
 
