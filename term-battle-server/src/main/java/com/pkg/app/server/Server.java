@@ -8,6 +8,8 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.HashMap;
 import com.pkg.app.rooms.Room;
+import com.pkg.app.party.monster.Monster;
+import com.pkg.app.party.Party;
 
 // Server class for the Terminal Battle
 public class Server implements Runnable {
@@ -72,9 +74,11 @@ public class Server implements Runnable {
     private PrintWriter out;
     private String clientName;
     private Room currentRoom;
+    private Party party;
 
     public ClientHandler(Socket socket) {
       this.socket = socket;
+      this.party = new Party(Monster.getRandomMonsters());
       try {
         // Initialize input and output streams
         in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
@@ -131,6 +135,12 @@ public class Server implements Runnable {
       out.println("[System] " + message);
     }
 
+
+    public Party getParty(){
+      return this.party;
+    }
+
+
   //TODO: Implement command logic
   private void handleCommand(String command, String clientName){
     //TODO: Implement other commands logic: options, party, etc.
@@ -148,6 +158,9 @@ public class Server implements Runnable {
     }
     else if (command.strip().equals("/rooms")){
       listRooms();
+    }
+    else if (command.strip().equals("/party")){
+      listParty();
     }
     else {
         System.out.println(clientName + ": " + command);
@@ -249,6 +262,11 @@ public class Server implements Runnable {
   }
   public String getClientName(){
     return this.clientName;
+  }
+
+  // Lists the client's party
+  private void listParty(){
+    this.party.listParty(this);
   }
 
     // Closes the connection and removes the client from the list
