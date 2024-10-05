@@ -4,7 +4,6 @@ import java.util.List;
 import java.util.ArrayList;
 import com.pkg.app.server.Server.ClientHandler;
 import java.util.Collections;
-import com.pkg.app.party.monster.Monster;
 
 
 // This class represents a room in the game. It has a list of clients in the room

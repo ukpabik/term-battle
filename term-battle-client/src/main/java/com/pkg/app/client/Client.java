@@ -11,7 +11,7 @@ public class Client {
 
 
   //Initialize the client
-  public Client(String address, int port, String name){
+  public Client(String address, int port, String name, String password){
     try {
             this.socket = new Socket(address, port);
             this.name = name;
@@ -20,13 +20,14 @@ public class Client {
             this.bf = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             this.pw = new PrintWriter(socket.getOutputStream(), true);
 
-            System.out.println("Yay! Client created");
-
             // Start a thread to listen for messages from the server
             new Thread(new ListenFromServer()).start();
 
             // Send the client's name to the server
             pw.println(name);
+
+            // Send the client's password to the server
+            pw.println(password);
 
         } catch (Exception e) {
             System.out.println("Unable to create client: " + e.getMessage());
@@ -62,7 +63,7 @@ public class Client {
   // Listens for connections across the server
   public void start() {
         Scanner scan = new Scanner(System.in);
-        System.out.println("You can start typing messages...");
+        System.out.println("Type /help to see available commands");
 
         while (true) {
             String input = scan.nextLine();

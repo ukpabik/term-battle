@@ -8,9 +8,11 @@ public class Main {
 
   public static void main(String[] args) {
     Scanner scan = new Scanner(System.in); // Do not close this
-    System.out.println("What is your name?");
+    System.out.println("Enter your username: ");
     String name = scan.nextLine();
-    Client c = new Client("127.0.0.1", 8080, name);
+    System.out.println("Enter your password: ");
+    String password = scan.nextLine();
+    Client c = new Client("127.0.0.1", 8080, name, password);
     // Start the listener thread
     new Thread(new Runnable() {
       @Override
@@ -18,7 +20,6 @@ public class Main {
         c.start();
       }
     }).start();
-
 
   }
 }
