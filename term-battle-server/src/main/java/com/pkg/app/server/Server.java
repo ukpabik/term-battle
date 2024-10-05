@@ -87,8 +87,8 @@ public class Server implements Runnable {
         out = new PrintWriter(socket.getOutputStream(), true);
 
         // Set the client's name and broadcast that they have joined the server.
-        this.clientName = in.readLine();
-        String password = in.readLine();
+        this.clientName = in.readLine().strip();
+        String password = in.readLine().strip();
 
         // Check if the user and password are in the system
         if (!validateUser(clientName, password)) {
@@ -115,7 +115,7 @@ public class Server implements Runnable {
       String message;
       try {
         // Listen for messages from the client
-        while ((message = in.readLine()) != null) {
+        while ((message = in.readLine().strip()) != null) {
           if (message.equalsIgnoreCase("exit")){
             break;
           }
@@ -184,7 +184,12 @@ public class Server implements Runnable {
         listParty();
       }
       else if (command.strip().equals("/enemy")){
-        getCurrentRoom().listOtherParties(this);
+        if (getCurrentRoom() != null){
+          getCurrentRoom().listOtherParties(this);
+        }
+        else{
+          sendSystemMessage("You are not in any room.");
+        }
       }
       else if (command.strip().equals("/help")){
         listHelp();

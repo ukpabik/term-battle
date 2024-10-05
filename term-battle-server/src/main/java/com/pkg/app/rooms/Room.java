@@ -83,7 +83,7 @@ public class Room {
     }
     client.sendMessage(userList.toString());
   }
-  
+
   public synchronized void listOtherParties(ClientHandler requestingClient) {
     if (clients.size() <= 1) {
       requestingClient.sendMessage("There are no other clients in the room.");
@@ -99,10 +99,10 @@ public class Room {
             partyList.append(c.getClientName()).append("'s Party:\n");
             for (Monster monster : party.getMonsters()) {
               partyList.append("- ").append(monster.getName())
-                       .append(" (Type: ").append(monster.getType())
-                       .append(", Health: ").append(monster.getHealth())
-                       .append(", Attack: ").append(monster.getAttack())
-                       .append(", Speed: ").append(monster.getSpeed()).append(")\n");
+                .append(" (Type: ").append(monster.getType())
+                .append(", Health: ").append(monster.getHealth())
+                .append(", Attack: ").append(monster.getAttack())
+                .append(", Speed: ").append(monster.getSpeed()).append(")\n");
             }
           } 
           else {
