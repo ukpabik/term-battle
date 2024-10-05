@@ -4,6 +4,7 @@ package com.pkg.app.party.monster;
 import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.List;
+import com.pkg.app.server.DatabaseManager; 
 
 public class Monster {
 
@@ -55,8 +56,8 @@ public class Monster {
 
   // Global method to get a list of random monsters
   public static List<Monster> getRandomMonsters() {
-    //TODO: implement this
-    return new ArrayList<>(Arrays.asList(new Monster("Test1", 10, 10, 10, new Type("fire"))));
+    List<Monster> monsters = DatabaseManager.getRandomMonsters();
+    return monsters;
   }
 
 }

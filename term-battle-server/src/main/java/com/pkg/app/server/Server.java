@@ -100,8 +100,6 @@ public class Server implements Runnable {
         System.out.println(clientName + " has connected to the server.");
 
         globalBroadcast(clientName + " has connected to the server.", this);
-        //TODO: Which way should I do it?
-        //        globalBroadcast(clientName + " has connected to the server.", this);
         this.setCurrentRoom(null);
       } catch (IOException e) {
         System.out.println("Error initializing client handler: " + e.getMessage());
@@ -156,6 +154,11 @@ public class Server implements Runnable {
       return this.party;
     }
 
+    // Sets the client's party
+    public void setParty(Party party){
+      this.party = party;
+    }
+
 
     // Handles all client commands and their functions
     private void handleCommand(String command, String clientName){
@@ -174,11 +177,20 @@ public class Server implements Runnable {
       else if (command.strip().equals("/rooms")){
         listRooms();
       }
+      else if (command.strip().equals("/list")){
+        getCurrentRoom().listAllUsers(this);
+      }
       else if (command.strip().equals("/party")){
         listParty();
       }
+      else if (command.strip().equals("/enemy")){
+        getCurrentRoom().listOtherParties(this);
+      }
       else if (command.strip().equals("/help")){
         listHelp();
+      }
+      else if (command.strip().equals("/exit")){
+        closeConnection();
       }
       else {
         System.out.println(clientName + ": " + command);
@@ -311,9 +323,13 @@ public class Server implements Runnable {
       try {
         if (clientName != null) {
           System.out.println(clientName + " has disconnected.");
-          sendSystemMessage(clientName + " has disconnected.");
+          sendSystemMessage("You have been disconnected.");
         }
-        leaveCurrentRoom();
+
+        if (getCurrentRoom() != null){
+          leaveCurrentRoom();
+        }
+
         clients.remove(this);
         if (in != null) in.close();
         if (out != null) out.close();
@@ -323,6 +339,8 @@ public class Server implements Runnable {
         System.out.println("Error closing connection for " + clientName + ": " + e.getMessage());
       }
     }
+
+
 
     private boolean validateUser(String username, String password){
       try{

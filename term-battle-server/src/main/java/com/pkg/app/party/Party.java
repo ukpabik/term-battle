@@ -22,7 +22,6 @@ public class Party {
     return monsters;
   }
 
-
   public Monster getCurrentMonster() {
     return currentMonster;
   }
@@ -30,6 +29,7 @@ public class Party {
   public void setCurrentMonster(Monster currentMonster) {
     this.currentMonster = currentMonster;
   }
+
   public void listParty(ClientHandler clientHandler) {
     clientHandler.sendMessage("Your party:");
     for (Monster monster : monsters) {
@@ -39,6 +39,11 @@ public class Party {
           ", Speed: " + monster.getSpeed() + 
           ", Type: " + monster.getType().getName() + ")");
     }
+  }
+
+  @Override
+  public String toString() {
+    return "Party [monsters=" + monsters + "]";
   }
 
 }

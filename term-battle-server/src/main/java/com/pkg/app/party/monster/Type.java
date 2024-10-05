@@ -26,6 +26,24 @@ public class Type {
       case "grass":
         this.weaknesses.add("fire");
         break;
+      case "rock":
+        this.weaknesses.add("flying");
+        break;
+      case "flying":
+        this.weaknesses.add("rock");
+        break;
+      case "electric":
+        this.weaknesses.add("ground");
+        break;
+      case "ground":
+        this.weaknesses.add("electric");
+        break;
+      case "normal":
+        this.weaknesses.add("ghost");
+        break;
+      case "poison":
+        this.weaknesses.add("ground");
+        break;
     }
   }
 
@@ -40,6 +58,11 @@ public class Type {
 
 
   public String getName(){
+    return this.name;
+  }
+
+  @Override
+  public String toString(){
     return this.name;
   }
 }

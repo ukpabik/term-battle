@@ -4,6 +4,8 @@ import java.util.List;
 import java.util.ArrayList;
 import com.pkg.app.server.Server.ClientHandler;
 import java.util.Collections;
+import com.pkg.app.party.Party;
+import com.pkg.app.party.monster.Monster;
 
 
 // This class represents a room in the game. It has a list of clients in the room
@@ -21,6 +23,12 @@ public class Room {
     return this.roomName;
   }
 
+  // Synchronized method to get random party
+  public synchronized void getRandomParty(ClientHandler client){
+    List<Monster> monsters = Monster.getRandomMonsters();
+    Party party = new Party(monsters);
+    client.setParty(party);
+  }
 
   // Synchronized method to add clients to rooms
   public synchronized boolean addClient(ClientHandler client){
@@ -53,6 +61,57 @@ public class Room {
         }
       }
     }
+  }
+
+  public synchronized void listAllUsers(ClientHandler client) {
+    if (clients.isEmpty()) {
+      client.sendMessage("There are no users currently in the room.");
+      return;
+    }
+
+    StringBuilder userList = new StringBuilder("Users in the room:\n");
+    synchronized(clients) {
+      for (ClientHandler c : clients) {
+        if (c == client) {
+          userList.append("*").append(c.getClientName()).append("*\n");
+        }
+        else{
+
+          userList.append(c.getClientName()).append("\n");
+        }
+      }
+    }
+    client.sendMessage(userList.toString());
+  }
+  
+  public synchronized void listOtherParties(ClientHandler requestingClient) {
+    if (clients.size() <= 1) {
+      requestingClient.sendMessage("There are no other clients in the room.");
+      return;
+    }
+
+    StringBuilder partyList = new StringBuilder();
+    synchronized(clients) {
+      for (ClientHandler c : clients) {
+        if (c != requestingClient) {
+          Party party = c.getParty();
+          if (party != null) {
+            partyList.append(c.getClientName()).append("'s Party:\n");
+            for (Monster monster : party.getMonsters()) {
+              partyList.append("- ").append(monster.getName())
+                       .append(" (Type: ").append(monster.getType())
+                       .append(", Health: ").append(monster.getHealth())
+                       .append(", Attack: ").append(monster.getAttack())
+                       .append(", Speed: ").append(monster.getSpeed()).append(")\n");
+            }
+          } 
+          else {
+            partyList.append(c.getClientName()).append(" has no party assigned.\n");
+          }
+        }
+      }
+    }
+    requestingClient.sendMessage(partyList.toString());
   }
 
 

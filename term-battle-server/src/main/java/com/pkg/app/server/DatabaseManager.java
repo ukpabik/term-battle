@@ -8,6 +8,10 @@ import java.sql.Timestamp;
 import java.time.Instant;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.util.ArrayList;
+import java.util.List;
+import com.pkg.app.party.monster.Monster;
+import com.pkg.app.party.monster.Type;
 
 
 public abstract class DatabaseManager {
@@ -67,10 +71,21 @@ public abstract class DatabaseManager {
   // Inserts a new monster into the database
   public static void insertMonster(String name, int health, int attack, int speed, String type) throws SQLException {
     con = getConnection();
-    con.createStatement().execute("INSERT INTO monsters VALUES ('" + name + "', " + health + ", " + attack + ", " + speed
-        + ", '" + type + "')");
+    String query = "INSERT INTO monsters (monster_name, health, attack, speed, type) VALUES (?, ?, ?, ?, ?)";
+    try (PreparedStatement pstmt = con.prepareStatement(query)) {
+      pstmt.setString(1, name);
+      pstmt.setInt(2, health);
+      pstmt.setInt(3, attack);
+      pstmt.setInt(4, speed);
+      pstmt.setString(5, type);
+      pstmt.executeUpdate();
+    } catch (SQLException e) {
+      System.err.println("Error inserting monster: " + name);
+      e.printStackTrace();
+    }
   }
 
+  
   public static boolean validateUser(String name, String password) throws SQLException {
     con = getConnection(); 
     PreparedStatement stmt = null;
@@ -106,4 +121,24 @@ public abstract class DatabaseManager {
         if (stmt != null) stmt.close();
         if (con != null) con.close();
     }
-}}
+  }
+  public static List<Monster> getRandomMonsters() {
+    List<Monster> monsters = new ArrayList<>();
+    try {
+      con = getConnection();
+      PreparedStatement stmt = con.prepareStatement("SELECT * FROM monsters ORDER BY RANDOM() LIMIT 5");
+      ResultSet rs = stmt.executeQuery();
+      while (rs.next()) {
+        String name = rs.getString("monster_name");
+        int health = rs.getInt("health");
+        int attack = rs.getInt("attack");
+        int speed = rs.getInt("speed");
+        String type = rs.getString("type");
+        monsters.add(new Monster(name, health, attack, speed, new Type(type)));
+      }
+    } catch (SQLException e) {
+      e.printStackTrace();
+    }
+    return monsters;
+  }
+}
