@@ -10,6 +10,7 @@ import java.util.HashMap;
 import com.pkg.app.rooms.Room;
 import com.pkg.app.party.monster.Monster;
 import com.pkg.app.party.Party;
+import java.sql.SQLException;
 
 // Server class for the Terminal Battle
 public class Server implements Runnable {
@@ -41,6 +42,7 @@ public class Server implements Runnable {
 
   // Accepts client connections and starts ClientHandler threads
   public void start() throws IOException {
+
     System.out.println("Server started. Waiting for clients...");
     while (true) {
       Socket clientSocket = serverSocket.accept();
@@ -86,11 +88,20 @@ public class Server implements Runnable {
 
         // Set the client's name and broadcast that they have joined the server.
         this.clientName = in.readLine();
+        String password = in.readLine();
+
+        // Check if the user and password are in the system
+        if (!validateUser(clientName, password)) {
+          System.out.println("Invalid password for " + clientName);
+          closeConnection();
+          return;
+        }
+
         System.out.println(clientName + " has connected to the server.");
 
         globalBroadcast(clientName + " has connected to the server.", this);
         //TODO: Which way should I do it?
-//        globalBroadcast(clientName + " has connected to the server.", this);
+        //        globalBroadcast(clientName + " has connected to the server.", this);
         this.setCurrentRoom(null);
       } catch (IOException e) {
         System.out.println("Error initializing client handler: " + e.getMessage());
@@ -125,44 +136,51 @@ public class Server implements Runnable {
       out.println(message);
     }
 
+    // Sends a global message
     public void sendGlobalMessage(String message){
       out.println("[Global] " + message);
     }
+    // Sends a message to users within a room
     public void sendRoomMessage(String message){
       out.println("[Room] " + message);
     }
+
+    // Sends a message from the server
     public void sendSystemMessage(String message){
       out.println("[System] " + message);
     }
 
 
+    // Returns the client's current party
     public Party getParty(){
       return this.party;
     }
 
 
-  //TODO: Implement command logic
-  private void handleCommand(String command, String clientName){
-    //TODO: Implement other commands logic: options, party, etc.
-    if (command.startsWith("/join ")){
-      String roomName = command.substring(6);
-      joinRoom(roomName);
-    }
-    else if (command.startsWith("/create ")){
-      String roomName = command.substring(8);
-      createRoom(roomName);
-      joinRoom(roomName);
-    }
-    else if (command.startsWith("/leave")){
-      leaveCurrentRoom();
-    }
-    else if (command.strip().equals("/rooms")){
-      listRooms();
-    }
-    else if (command.strip().equals("/party")){
-      listParty();
-    }
-    else {
+    // Handles all client commands and their functions
+    private void handleCommand(String command, String clientName){
+      if (command.startsWith("/join ")){
+        String roomName = command.substring(6);
+        joinRoom(roomName);
+      }
+      else if (command.startsWith("/create ")){
+        String roomName = command.substring(8);
+        createRoom(roomName);
+        joinRoom(roomName);
+      }
+      else if (command.startsWith("/leave")){
+        leaveCurrentRoom();
+      }
+      else if (command.strip().equals("/rooms")){
+        listRooms();
+      }
+      else if (command.strip().equals("/party")){
+        listParty();
+      }
+      else if (command.strip().equals("/help")){
+        listHelp();
+      }
+      else {
         System.out.println(clientName + ": " + command);
         if (getCurrentRoom() != null){
           currentRoom.roomBroadcast(clientName + ": " + command, this);
@@ -170,104 +188,123 @@ public class Server implements Runnable {
         else{
           globalBroadcast(clientName + ": " + command, this);
         }
+      }
     }
-  }
 
-  // Create room function
-  private void createRoom(String roomName){
-    synchronized (rooms) {
-      if (!rooms.containsKey(roomName)){
-        Room room = new Room(roomName);
-        rooms.put(roomName, room);
-        sendSystemMessage("Room '" + roomName + "' created.");
-        System.out.println("Room '" + roomName + "' created by " + clientName);
-      }
-      else {
-        sendSystemMessage("Room '" + roomName + "' already exists.");
-        System.out.println("Room creation failed: '" + roomName + "' already exists.");
-      }
-    }
-  } 
-  // Function to join a room
-  private void joinRoom(String roomName){
-    synchronized (rooms) {
-      Room room = rooms.get(roomName);
-      if (room != null){
-        if (room.isFull()){
-          sendSystemMessage("Room '" + roomName + "' is full.");
-          System.out.println("Join failed: Room '" + roomName + "' is full.");
-        }
-        else{
-          if (getCurrentRoom() != null){
-            leaveCurrentRoom();
+    // Function to create a room
+    private void createRoom(String roomName){
+      synchronized (rooms) {
+        if (roomName.length() > 0){
+          if (!rooms.containsKey(roomName)){
+            Room room = new Room(roomName);
+            rooms.put(roomName, room);
+            sendSystemMessage("Room '" + roomName + "' created.");
+            System.out.println("Room '" + roomName + "' created by " + clientName);
           }
-          if (room.addClient(this)){
-            setCurrentRoom(room);            
-            sendSystemMessage("Joined room '" + roomName + "'.");
-            System.out.println(clientName + " joined room " + roomName);
+          else {
+            sendSystemMessage("Room '" + roomName + "' already exists.");
+            System.out.println("Room creation failed: '" + roomName + "' already exists.");
+          }
+        }
+        else {
+          sendSystemMessage("Room name cannot be empty.");
+          System.out.println("Room creation failed: Room name cannot be empty.");
+        }
+      }
+    } 
+
+    // Function to join a room
+    private void joinRoom(String roomName){
+      synchronized (rooms) {
+        if (roomName.length() > 0){
+
+          Room room = rooms.get(roomName);
+          if (room != null){
+            if (room.isFull()){
+              sendSystemMessage("Room '" + roomName + "' is full.");
+              System.out.println("Join failed: Room '" + roomName + "' is full.");
+            }
+            else{
+              if (getCurrentRoom() != null){
+                leaveCurrentRoom();
+              }
+              if (room.addClient(this)){
+                setCurrentRoom(room);            
+                sendSystemMessage("Joined room '" + roomName + "'.");
+                System.out.println(clientName + " joined room " + roomName);
+              }
+              else{
+                sendSystemMessage("Unable to join " + roomName);
+                System.out.println("Join failed: Unable to join room '" + roomName + "'");
+              }
+            }
           }
           else{
-            sendSystemMessage("Unable to join " + roomName);
-            System.out.println("Join failed: Unable to join room '" + roomName + "'");
+            sendSystemMessage("Room '" + roomName + "' does not exist.");
+            System.out.println("Join failed: Room '" + roomName + "' does not exist.");
+          }
+        }
+        else {
+          sendSystemMessage("Please enter a room name.");
+          System.out.println("Join failed: Please enter a room name.");
+        }
+      }
+    }  
+    // Function to leave a room
+    private void leaveCurrentRoom(){
+      synchronized(rooms){
+        if (getCurrentRoom() != null){
+          Room room = getCurrentRoom();
+          room.removeClient(this);
+
+          sendSystemMessage("You have left the room.");
+          if (room.getClientCount() == 0){
+            rooms.remove(room.getRoomName());
+            System.out.println("Room '" + room.getRoomName() +"' has been deleted because it is empty.");
+          }
+          setCurrentRoom(null); 
+        }
+        else{
+          sendSystemMessage("You are not in any room.");
+          System.out.println("User '" + clientName + "' attempted to leave a room but was not in any.");
+        }
+      }
+    }
+    // Function to list all rooms
+    private void listRooms(){
+      synchronized (rooms){
+        if (rooms.isEmpty()){
+          sendMessage("No rooms available.");
+        }
+        else {
+          sendSystemMessage("Available rooms:");
+          for (Room room : rooms.values()) {
+            sendMessage("- " + room.getRoomName() + " (" + room.getClientCount() + "/2)");
           }
         }
       }
-      else{
-        sendSystemMessage("Room '" + roomName + "' does not exist.");
-        System.out.println("Join failed: Room '" + roomName + "' does not exist.");
-      }
     }
-  }  
-  // Function to leave a room
-  private void leaveCurrentRoom(){
-    synchronized(rooms){
-      if (getCurrentRoom() != null){
-        Room room = getCurrentRoom();
-        room.removeClient(this);
 
-        sendSystemMessage("You have left the room.");
-        if (room.getClientCount() == 0){
-          rooms.remove(room.getRoomName());
-          System.out.println("Room '" + room.getRoomName() +"' has been deleted because it is empty.");
-        }
-        setCurrentRoom(null); 
-      }
-      else{
-        sendSystemMessage("You are not in any room.");
-        System.out.println("User '" + clientName + "' attempted to leave a room but was not in any.");
-      }
+    public synchronized Room getCurrentRoom(){
+      return this.currentRoom;
     }
-  }
-  // Function to list all rooms
-  private void listRooms(){
-    synchronized (rooms){
-      if (rooms.isEmpty()){
-        sendMessage("No rooms available.");
-      }
-      else {
-        sendSystemMessage("Available rooms:");
-        for (Room room : rooms.values()) {
-          sendMessage("- " + room.getRoomName() + " (" + room.getClientCount() + "/2)");
-        }
-      }
+
+    public synchronized void setCurrentRoom(Room room){
+      this.currentRoom = room;
     }
-  }
+    public String getClientName(){
+      return this.clientName;
+    }
 
-  public synchronized Room getCurrentRoom(){
-    return this.currentRoom;
-  }
+    // Lists the client's party
+    private void listParty(){
+      this.party.listParty(this);
+    }
 
-  public synchronized void setCurrentRoom(Room room){
-    this.currentRoom = room;
-  }
-  public String getClientName(){
-    return this.clientName;
-  }
-
-  // Lists the client's party
-  private void listParty(){
-    this.party.listParty(this);
-  }
+    // Lists all available commands to the user
+    private void listHelp(){
+      this.sendSystemMessage("Commands: /join <room name>, /create <room name>, /leave, /rooms, /party, /help");
+    }
 
     // Closes the connection and removes the client from the list
     public void closeConnection() {
@@ -286,7 +323,15 @@ public class Server implements Runnable {
         System.out.println("Error closing connection for " + clientName + ": " + e.getMessage());
       }
     }
-   
+
+    private boolean validateUser(String username, String password){
+      try{
+        return DatabaseManager.validateUser(username, password); }
+      catch (SQLException e){
+        return false;
+      }
+    }
+
   }
 
   // Broadcasts a message to all clients except the sender
@@ -306,6 +351,6 @@ public class Server implements Runnable {
 
 
 
- 
+
 }
 
