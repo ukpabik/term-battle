@@ -21,9 +21,6 @@ public class Room {
     this.host = host;
   }
 
-  public String getRoomName(){
-    return this.roomName;
-  }
 
   // Synchronized method to get random party
   public synchronized void getRandomParty(ClientHandler client){
@@ -76,6 +73,8 @@ public class Room {
     }
   }
 
+
+  // Lists all users in the room
   public synchronized void listAllUsers(ClientHandler client) {
     if (clients.isEmpty()) {
       client.sendMessage("There are no users currently in the room.");
@@ -96,6 +95,7 @@ public class Room {
     client.sendMessage(userList.toString());
   }
 
+  // Lists the enemy party for the user to see and strategize
   public synchronized void listOtherParties(ClientHandler requestingClient) {
     if (clients.size() <= 1) {
       requestingClient.sendMessage("There are no other clients in the room.");
@@ -127,6 +127,7 @@ public class Room {
   }
 
 
+  // Function that starts the room 
   public void startBattle(){
     if (clients.size() < 2) {
       host.sendMessage("There are not enough players in the room to start the battle.");
@@ -203,4 +204,7 @@ public class Room {
     return clients;
   }
 
+  public String getRoomName(){
+    return this.roomName;
+  }
 }

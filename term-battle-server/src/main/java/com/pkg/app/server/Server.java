@@ -11,6 +11,9 @@ import com.pkg.app.rooms.Room;
 import com.pkg.app.party.monster.Monster;
 import com.pkg.app.party.Party;
 import java.sql.SQLException;
+import com.pkg.app.server.commands.CommandHandler;
+import com.pkg.app.server.text.AnsiText;
+
 
 // Server class for the Terminal Battle
 public class Server implements Runnable {
@@ -78,10 +81,12 @@ public class Server implements Runnable {
     private Room currentRoom;
     private Party party;
     private boolean isReady = false;
+    private CommandHandler commandHandler;
 
     public ClientHandler(Socket socket) {
       this.socket = socket;
       this.party = new Party(Monster.getRandomMonsters());
+      this.commandHandler = new CommandHandler();
       try {
         // Initialize input and output streams
         in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
@@ -98,7 +103,7 @@ public class Server implements Runnable {
           return;
         }
 
-        System.out.println(clientName + " has connected to the server.");
+        System.out.println(AnsiText.color(clientName + " has connected to the server.", AnsiText.RED));
 
         globalBroadcast(clientName + " has connected to the server.", this);
         this.setCurrentRoom(null);
@@ -120,7 +125,7 @@ public class Server implements Runnable {
           if (message.equalsIgnoreCase("exit")){
             break;
           }
-          handleCommand(message, clientName);
+          commandHandler.executeCommand(message, this);
         }
       } catch (IOException e) {
         System.out.println("Connection lost with " + clientName);
@@ -137,16 +142,16 @@ public class Server implements Runnable {
 
     // Sends a global message
     public void sendGlobalMessage(String message){
-      out.println("[Global] " + message);
+      out.println(AnsiText.color("[Global] ", AnsiText.GREEN) + message);
     }
     // Sends a message to users within a room
     public void sendRoomMessage(String message){
-      out.println("[Room] " + message);
+      out.println(AnsiText.color("[Room] " + message, AnsiText.CYAN));
     }
 
     // Sends a message from the server
     public void sendSystemMessage(String message){
-      out.println("[System] " + message);
+      out.println(AnsiText.color("[System] " + message, AnsiText.RED));
     }
 
 
@@ -173,78 +178,23 @@ public class Server implements Runnable {
     }
 
 
-    // Handles all client commands and their functions
-    private void handleCommand(String command, String clientName){
-      if (command.startsWith("/join ")){
-        String roomName = command.substring(6);
-        joinRoom(roomName);
-      }
-      else if (command.startsWith("/create ")){
-        String roomName = command.substring(8);
-        createRoom(roomName);
-        joinRoom(roomName);
-      }
-      else if (command.startsWith("/leave")){
-        leaveCurrentRoom();
-      }
-      else if (command.strip().equals("/rooms")){
-        listRooms();
-      }
-      else if (command.strip().equals("/list")){
-        getCurrentRoom().listAllUsers(this);
-      }
-      else if (command.strip().equals("/party")){
-        listParty();
-      }
-      else if (command.strip().equals("/enemy")){
-        if (getCurrentRoom() != null){
-          getCurrentRoom().listOtherParties(this);
-        }
-        else{
-          sendSystemMessage("You are not in any room.");
-        }
-      }
-      else if (command.strip().equals("/ready")){
-        if (getCurrentRoom() != null){
-          this.toggleReady();
-          getCurrentRoom().roomBroadcast(clientName + " is " + (isReady ? "ready" : "not ready"), this);
-        }
-        else{
-          sendSystemMessage("You are not in any room.");
-        }
-      }
-      else if (command.strip().equals("/start")){
-        if (getCurrentRoom() != null){
-          getCurrentRoom().start(this);
-        }
-        else{
-          sendSystemMessage("You are not in any room.");
-        }
-      }
-      else if (command.strip().equals("/help")){
-        listHelp();
-      }
-      else if (command.strip().equals("/exit")){
-        closeConnection();
-      }
-      else {
-        if (command.startsWith("/")){
-          sendSystemMessage("Unknown command: " + command);
-        }
-        else{
-          System.out.println(clientName + ": " + command);
-          if (getCurrentRoom() != null){
-            currentRoom.roomBroadcast(clientName + ": " + command, this);
-          }
-          else{
-            globalBroadcast(clientName + ": " + command, this);
+    // Broadcasts a message to all clients except the sender
+    public void globalBroadcast(String message, ClientHandler excludeClient) {
+      // Since all users are on different threads
+      // Synchronize the message being sent across all users
+      if (excludeClient.getCurrentRoom() == null){
+        synchronized (clients) {
+          for (ClientHandler client : clients) {
+            if (client != excludeClient && client.currentRoom == null) {
+              client.sendGlobalMessage(message);
+            }
           }
         }
       }
     }
 
     // Function to create a room
-    private void createRoom(String roomName){
+    public void createRoom(String roomName){
       synchronized (rooms) {
         if (roomName.length() > 0){
           if (!rooms.containsKey(roomName)){
@@ -252,6 +202,7 @@ public class Server implements Runnable {
             rooms.put(roomName, room);
             sendSystemMessage("Room '" + roomName + "' created.");
             System.out.println("Room '" + roomName + "' created by " + clientName);
+            joinRoom(roomName);
           }
           else {
             sendSystemMessage("Room '" + roomName + "' already exists.");
@@ -266,7 +217,7 @@ public class Server implements Runnable {
     } 
 
     // Function to join a room
-    private void joinRoom(String roomName){
+    public void joinRoom(String roomName){
       synchronized (rooms) {
         if (roomName.length() > 0){
 
@@ -303,7 +254,7 @@ public class Server implements Runnable {
       }
     }  
     // Function to leave a room
-    private void leaveCurrentRoom(){
+    public void leaveCurrentRoom(){
       synchronized(rooms){
         if (getCurrentRoom() != null){
           Room room = getCurrentRoom();
@@ -324,7 +275,7 @@ public class Server implements Runnable {
     }
 
     // Function to list all rooms
-    private void listRooms(){
+    public void listRooms(){
       synchronized (rooms){
         if (rooms.isEmpty()){
           sendMessage("No rooms available.");
@@ -351,13 +302,13 @@ public class Server implements Runnable {
     }
 
     // Lists the client's party
-    private void listParty(){
+    public void listParty(){
       this.party.listParty(this);
     }
 
     // Lists all available commands to the user
-    private void listHelp(){
-      this.sendSystemMessage("Commands: /join <room name>, /create <room name>, /leave, /rooms, /party, /help");
+    public void listHelp(){
+      this.sendSystemMessage("Commands: " + String.join(", ", commandHandler.getCommands().keySet()));
     }
 
     // Closes the connection and removes the client from the list
@@ -394,19 +345,6 @@ public class Server implements Runnable {
 
   }
 
-  // Broadcasts a message to all clients except the sender
-  private void globalBroadcast(String message, ClientHandler excludeClient) {
-    // Since all users are on different threads
-    // Synchronize the message being sent across all users
-    if (excludeClient.getCurrentRoom() == null){
-      synchronized (clients) {
-        for (ClientHandler client : clients) {
-          if (client != excludeClient && client.currentRoom == null) {
-            client.sendGlobalMessage(message);
-          }
-        }
-      }
-    }
-  }
+ 
 }
 

@@ -100,8 +100,9 @@ public abstract class DatabaseManager {
 
       if (rs.next()) {
         // If user exists, validate password
+        // TODO: Implement password hashing
         String storedPassword = rs.getString("password");
-        return storedPassword.equals(password);  // Plain text password check (but see note on hashing)
+        return storedPassword.equals(password);  
       } else {
         // If user doesn't exist, create a new user
         String insertUserQuery = """
@@ -110,8 +111,8 @@ public abstract class DatabaseManager {
           """;
         PreparedStatement insertStmt = con.prepareStatement(insertUserQuery);
         insertStmt.setString(1, name);
-        insertStmt.setString(2, password); // Consider hashing before storing
-        insertStmt.setTimestamp(3, Timestamp.from(Instant.now())); // Set the joined time
+        insertStmt.setString(2, password); 
+        insertStmt.setTimestamp(3, Timestamp.from(Instant.now()));
         insertStmt.executeUpdate();
         System.out.println("New user created: " + name);
         return true;  
