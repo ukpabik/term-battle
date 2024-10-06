@@ -13,40 +13,40 @@ public class Client {
   //Initialize the client
   public Client(String address, int port, String name, String password){
     try {
-            this.socket = new Socket(address, port);
-            this.name = name;
+      this.socket = new Socket(address, port);
+      this.name = name;
 
-            // Initialize reader and writer
-            this.bf = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-            this.pw = new PrintWriter(socket.getOutputStream(), true);
+      // Initialize reader and writer
+      this.bf = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+      this.pw = new PrintWriter(socket.getOutputStream(), true);
 
-            // Start a thread to listen for messages from the server
-            new Thread(new ListenFromServer()).start();
+      // Start a thread to listen for messages from the server
+      new Thread(new ListenFromServer()).start();
 
-            // Send the client's name to the server
-            pw.println(name);
+      // Send the client's name to the server
+      pw.println(name);
 
-            // Send the client's password to the server
-            pw.println(password);
+      // Send the client's password to the server
+      pw.println(password);
 
-        } catch (Exception e) {
-            System.out.println("Unable to create client: " + e.getMessage());
-        }
+    } catch (Exception e) {
+      System.out.println("Unable to create client: " + e.getMessage());
+    }
   }
 
   // Listens for messages from the server 
   private class ListenFromServer implements Runnable {
-        public void run() {
-            String message;
-            try {
-                while ((message = bf.readLine()) != null) {
-                    System.out.println(message);
-                }
-            } catch (IOException e) {
-                System.out.println("Connection closed.");
-            }
+    public void run() {
+      String message;
+      try {
+        while ((message = bf.readLine()) != null) {
+          System.out.println(message);
         }
+      } catch (IOException e) {
+        System.out.println("Connection closed.");
+      }
     }
+  }
 
 
 
@@ -62,24 +62,24 @@ public class Client {
 
   // Listens for connections across the server
   public void start() {
-        Scanner scan = new Scanner(System.in);
-        System.out.println("Type /help to see available commands");
+    Scanner scan = new Scanner(System.in);
+    System.out.println("Type /help to see available commands");
 
-        while (true) {
-            String input = scan.nextLine();
-            if (input.equalsIgnoreCase("exit")) {
-                break;
-            }
-            pw.println(input); 
-        }
-
-        try {
-            socket.close();
-        } catch (Exception e) {
-            System.out.println("Error closing the client socket: " + e.getMessage());
-        } finally {
-            scan.close();
-            System.out.println("All resources closed!");
-        }
+    while (true) {
+      String input = scan.nextLine();
+      if (input.equalsIgnoreCase("exit")) {
+        break;
+      }
+      pw.println(input); 
     }
+
+    try {
+      socket.close();
+    } catch (Exception e) {
+      System.out.println("Error closing the client socket: " + e.getMessage());
+    } finally {
+      scan.close();
+      System.out.println("All resources closed!");
+    }
+  }
 }

@@ -29,6 +29,5 @@ public class Move {
   public Type getType() {
     return type;
   }
-  
 
 }

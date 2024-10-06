@@ -35,11 +35,11 @@ public abstract class DatabaseManager {
     con = getConnection();
     con.createStatement().execute("""
         CREATE TABLE IF NOT EXISTS monsters (
-            monster_name VARCHAR(60) PRIMARY KEY,
-            health INTEGER NOT NULL,
-            attack INTEGER NOT NULL,
-            speed INTEGER NOT NULL,
-            type VARCHAR(50) NOT NULL
+          monster_name VARCHAR(60) PRIMARY KEY,
+          health INTEGER NOT NULL,
+          attack INTEGER NOT NULL,
+          speed INTEGER NOT NULL,
+          type VARCHAR(50) NOT NULL
           );
         """);
   }
@@ -48,12 +48,12 @@ public abstract class DatabaseManager {
     con = getConnection();
     con.createStatement().execute("""
         CREATE TABLE IF NOT EXISTS users (
-            username VARCHAR(60) PRIMARY KEY,
-            password VARCHAR(60) NOT NULL,
-            wins INTEGER NOT NULL,
-            losses INTEGER NOT NULL,
-            games_played INTEGER NOT NULL,
-            joined TIMESTAMP NOT NULL
+          username VARCHAR(60) PRIMARY KEY,
+          password VARCHAR(60) NOT NULL,
+          wins INTEGER NOT NULL,
+          losses INTEGER NOT NULL,
+          games_played INTEGER NOT NULL,
+          joined TIMESTAMP NOT NULL
           );
         """);
   }
@@ -85,41 +85,41 @@ public abstract class DatabaseManager {
     }
   }
 
-  
+
   public static boolean validateUser(String name, String password) throws SQLException {
     con = getConnection(); 
     PreparedStatement stmt = null;
     ResultSet rs = null;
 
     try {
-        // Check if the user already exists
-        String checkUserQuery = "SELECT * FROM users WHERE username = ?";
-        stmt = con.prepareStatement(checkUserQuery);
-        stmt.setString(1, name);
-        rs = stmt.executeQuery();
+      // Check if the user already exists
+      String checkUserQuery = "SELECT * FROM users WHERE username = ?";
+      stmt = con.prepareStatement(checkUserQuery);
+      stmt.setString(1, name);
+      rs = stmt.executeQuery();
 
-        if (rs.next()) {
-            // If user exists, validate password
-            String storedPassword = rs.getString("password");
-            return storedPassword.equals(password);  // Plain text password check (but see note on hashing)
-        } else {
-            // If user doesn't exist, create a new user
-            String insertUserQuery = """
-                INSERT INTO users (username, password, wins, losses, games_played, joined)
-                VALUES (?, ?, 0, 0, 0, ?)
-            """;
-            PreparedStatement insertStmt = con.prepareStatement(insertUserQuery);
-            insertStmt.setString(1, name);
-            insertStmt.setString(2, password); // Consider hashing before storing
-            insertStmt.setTimestamp(3, Timestamp.from(Instant.now())); // Set the joined time
-            insertStmt.executeUpdate();
-            System.out.println("New user created: " + name);
-            return true;  
-        }
+      if (rs.next()) {
+        // If user exists, validate password
+        String storedPassword = rs.getString("password");
+        return storedPassword.equals(password);  // Plain text password check (but see note on hashing)
+      } else {
+        // If user doesn't exist, create a new user
+        String insertUserQuery = """
+          INSERT INTO users (username, password, wins, losses, games_played, joined)
+          VALUES (?, ?, 0, 0, 0, ?)
+          """;
+        PreparedStatement insertStmt = con.prepareStatement(insertUserQuery);
+        insertStmt.setString(1, name);
+        insertStmt.setString(2, password); // Consider hashing before storing
+        insertStmt.setTimestamp(3, Timestamp.from(Instant.now())); // Set the joined time
+        insertStmt.executeUpdate();
+        System.out.println("New user created: " + name);
+        return true;  
+      }
     } finally {
-        if (rs != null) rs.close();
-        if (stmt != null) stmt.close();
-        if (con != null) con.close();
+      if (rs != null) rs.close();
+      if (stmt != null) stmt.close();
+      if (con != null) con.close();
     }
   }
   public static List<Monster> getRandomMonsters() {

@@ -77,6 +77,7 @@ public class Server implements Runnable {
     private String clientName;
     private Room currentRoom;
     private Party party;
+    private boolean isReady = false;
 
     public ClientHandler(Socket socket) {
       this.socket = socket;
@@ -160,6 +161,18 @@ public class Server implements Runnable {
     }
 
 
+    // Returns whether the client is ready or not
+    public boolean getReady(){
+      return isReady;
+    }
+
+    // Toggles whether the client is ready or not
+    public void toggleReady(){
+      this.isReady = !this.isReady;
+      sendSystemMessage("You are now " + (isReady ? "ready" : "not ready"));
+    }
+
+
     // Handles all client commands and their functions
     private void handleCommand(String command, String clientName){
       if (command.startsWith("/join ")){
@@ -191,6 +204,23 @@ public class Server implements Runnable {
           sendSystemMessage("You are not in any room.");
         }
       }
+      else if (command.strip().equals("/ready")){
+        if (getCurrentRoom() != null){
+          this.toggleReady();
+          getCurrentRoom().roomBroadcast(clientName + " is " + (isReady ? "ready" : "not ready"), this);
+        }
+        else{
+          sendSystemMessage("You are not in any room.");
+        }
+      }
+      else if (command.strip().equals("/start")){
+        if (getCurrentRoom() != null){
+          getCurrentRoom().start(this);
+        }
+        else{
+          sendSystemMessage("You are not in any room.");
+        }
+      }
       else if (command.strip().equals("/help")){
         listHelp();
       }
@@ -198,12 +228,17 @@ public class Server implements Runnable {
         closeConnection();
       }
       else {
-        System.out.println(clientName + ": " + command);
-        if (getCurrentRoom() != null){
-          currentRoom.roomBroadcast(clientName + ": " + command, this);
+        if (command.startsWith("/")){
+          sendSystemMessage("Unknown command: " + command);
         }
         else{
-          globalBroadcast(clientName + ": " + command, this);
+          System.out.println(clientName + ": " + command);
+          if (getCurrentRoom() != null){
+            currentRoom.roomBroadcast(clientName + ": " + command, this);
+          }
+          else{
+            globalBroadcast(clientName + ": " + command, this);
+          }
         }
       }
     }
@@ -213,7 +248,7 @@ public class Server implements Runnable {
       synchronized (rooms) {
         if (roomName.length() > 0){
           if (!rooms.containsKey(roomName)){
-            Room room = new Room(roomName);
+            Room room = new Room(roomName, this);
             rooms.put(roomName, room);
             sendSystemMessage("Room '" + roomName + "' created.");
             System.out.println("Room '" + roomName + "' created by " + clientName);
@@ -287,6 +322,7 @@ public class Server implements Runnable {
         }
       }
     }
+
     // Function to list all rooms
     private void listRooms(){
       synchronized (rooms){
@@ -309,6 +345,7 @@ public class Server implements Runnable {
     public synchronized void setCurrentRoom(Room room){
       this.currentRoom = room;
     }
+
     public String getClientName(){
       return this.clientName;
     }
@@ -371,9 +408,5 @@ public class Server implements Runnable {
       }
     }
   }
-
-
-
-
 }
 
