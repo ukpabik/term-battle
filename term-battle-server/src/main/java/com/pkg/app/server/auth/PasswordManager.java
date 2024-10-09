@@ -16,12 +16,7 @@ public class PasswordManager {
   public static boolean compare(String hashedPassword, String unhashedPassword){
     if (unhashedPassword.length() > 0){
       BCrypt.Result result = BCrypt.verifyer().verify(unhashedPassword.toCharArray(), hashedPassword);
-      if (result.verified){
-        return true;
-      }
-      else{
-        return false;
-      }
+      return result.verified;
     }
     return false;
   }
