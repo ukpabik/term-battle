@@ -9,7 +9,6 @@ public class Main {
 
         try {
             Server s = new Server(8080);
-            System.out.println("Server is open to connections");
 
             // Start the server in a new thread to avoid blocking the main thread
             Thread serverThread = new Thread(s);

@@ -2,35 +2,33 @@ package com.pkg.app.server;
 
 import java.net.*;
 import java.io.*;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Collections;
 import java.util.Map;
-import java.util.HashMap;
 import com.pkg.app.rooms.Room;
 import com.pkg.app.party.monster.Monster;
 import com.pkg.app.party.Party;
 import java.sql.SQLException;
 import com.pkg.app.server.commands.CommandHandler;
 import com.pkg.app.server.text.AnsiText;
+import java.nio.charset.StandardCharsets;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArraySet;
+import com.pkg.app.server.Logger;
 
-
-// Server class for the Terminal Battle
 public class Server implements Runnable {
 
-  // Server fields (serverSocket and list of clients connected)
+  // Server fields (serverSocket and set of clients connected)
   private ServerSocket serverSocket;
-  // Synchronized list of clients
-  private List<ClientHandler> clients = Collections.synchronizedList(new ArrayList<>());
-  private Map<String, Room> rooms = new HashMap<>();
+  private Set<ClientHandler> clients = new CopyOnWriteArraySet<>();
+  private Map<String, Room> rooms = new ConcurrentHashMap<>();
 
   // Initializes server with given port
   public Server(int port) throws IOException {
     serverSocket = new ServerSocket(port);
   }
 
-  // Returns the list of connected clients
-  public List<ClientHandler> getClients() {
+  // Returns the set of connected clients
+  public Set<ClientHandler> getClients() {
     return clients;
   }
 
@@ -39,22 +37,20 @@ public class Server implements Runnable {
     try {
       start();
     } catch (IOException e) {
-      System.out.println("Unable to start server: " + e.getMessage());
+      Logger.error("Unable to start server: " + e.getMessage());
     }
   }
 
   // Accepts client connections and starts ClientHandler threads
   public void start() throws IOException {
-
-    System.out.println("Server started. Waiting for clients...");
+    Logger.info("Server started. Waiting for clients...");
     while (true) {
       Socket clientSocket = serverSocket.accept();
       ClientHandler clientHandler = new ClientHandler(clientSocket);
       clients.add(clientHandler);
-      System.out.println("Client connected: " + clientSocket.getInetAddress());
-      System.out.println("Total Connections: " + clients.size());
+      Logger.info("Client connected: " + clientSocket.getInetAddress());
+      Logger.info("Total Connections: " + clients.size());
       // Starts a new thread each time a new user joins
-      // Each user is ran on their own thread
       new Thread(clientHandler).start();
     }
   }
@@ -63,17 +59,16 @@ public class Server implements Runnable {
   public void stop() throws IOException {
     // Closes the serverSocket
     serverSocket.close();
-    // Since each client is run on its own thread
-    // Synchronize closing the connections between all clients
-    synchronized (clients) {
-      for (ClientHandler client : clients) {
-        client.closeConnection();
-      }
+    // Close connections for all clients
+    for (ClientHandler client : clients) {
+      client.closeConnection();
     }
   }
 
   // Inner class to handle client communication
   public class ClientHandler implements Runnable {
+    private static final int MAX_ATTEMPTS = 3;
+    private int attempts;
     private Socket socket;
     private BufferedReader in;
     private PrintWriter out;
@@ -87,33 +82,40 @@ public class Server implements Runnable {
       this.socket = socket;
       this.party = new Party(Monster.getRandomMonsters());
       this.commandHandler = new CommandHandler();
+      this.attempts = 0;
       try {
         // Initialize input and output streams
-        in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-        out = new PrintWriter(socket.getOutputStream(), true);
+        in = new BufferedReader(new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8));
+        out = new PrintWriter(new OutputStreamWriter(socket.getOutputStream(), StandardCharsets.UTF_8), true);
 
-        // Set the client's name and broadcast that they have joined the server.
+        // Set the client's name
         this.clientName = in.readLine().strip();
-        String password = in.readLine().strip();
 
         // Check if the user and password are in the system
-        if (!validateUser(clientName, password)) {
-          System.out.println("Invalid password for " + clientName);
-          closeConnection();
-          return;
+        while (attempts < MAX_ATTEMPTS) {
+          String password = in.readLine().strip();
+          if (validateUser(clientName, password)) {
+            out.println(AnsiText.color("Login successful... You are now connected!", AnsiText.GREEN));
+            Logger.info(clientName + " has connected to the server.");
+            globalBroadcast(clientName + " has connected to the server.", this);
+            this.setCurrentRoom(null);
+            return;
+          } else {
+            attempts++;
+            Logger.warning("Invalid login attempt for " + clientName + ", " + (MAX_ATTEMPTS - attempts) + " attempts left.");
+            out.println(AnsiText.color("Invalid username or password. Please try again.", AnsiText.RED));
+          }
         }
 
-        System.out.println(AnsiText.color(clientName + " has connected to the server.", AnsiText.RED));
+        Logger.error("Too many failed attempts for " + clientName + ". Disconnecting them now...");
+        out.println(AnsiText.color("Too many login attempts. Please try again later.", AnsiText.RED));
+        closeConnection();
 
-        globalBroadcast(clientName + " has connected to the server.", this);
-        this.setCurrentRoom(null);
       } catch (IOException e) {
-        System.out.println("Error initializing client handler: " + e.getMessage());
+        Logger.error("Error initializing client handler: " + e.getMessage());
         closeConnection();
       }
     }
-
-
 
     // Runs the client-handler to allow for synchronous activity across the server
     @Override
@@ -121,16 +123,17 @@ public class Server implements Runnable {
       String message;
       try {
         // Listen for messages from the client
-        while ((message = in.readLine().strip()) != null) {
-          if (message.equalsIgnoreCase("exit")){
+        while ((message = in.readLine()) != null) {
+          message = message.strip();
+          if (message.equalsIgnoreCase("exit")) {
             break;
           }
           commandHandler.executeCommand(message, this);
         }
       } catch (IOException e) {
-        System.out.println("Connection lost with " + clientName);
+        Logger.warning("Connection lost with " + clientName);
       } finally {
-        System.out.println("Closing the connection with: " + clientName);
+        Logger.info("Closing the connection with: " + clientName);
         closeConnection();
       }
     }
@@ -141,185 +144,171 @@ public class Server implements Runnable {
     }
 
     // Sends a global message
-    public void sendGlobalMessage(String message){
+    public void sendGlobalMessage(String message) {
       out.println(AnsiText.color("[Global] ", AnsiText.GREEN) + message);
     }
+
     // Sends a message to users within a room
-    public void sendRoomMessage(String message){
+    public void sendRoomMessage(String message) {
       out.println(AnsiText.color("[Room] " + message, AnsiText.CYAN));
     }
 
     // Sends a message from the server
-    public void sendSystemMessage(String message){
+    public void sendSystemMessage(String message) {
       out.println(AnsiText.color("[System] " + message, AnsiText.RED));
     }
 
-
     // Returns the client's current party
-    public Party getParty(){
+    public Party getParty() {
       return this.party;
     }
 
     // Sets the client's party
-    public void setParty(Party party){
+    public void setParty(Party party) {
       this.party = party;
     }
 
-
     // Returns whether the client is ready or not
-    public boolean getReady(){
+    public boolean getReady() {
       return isReady;
     }
 
     // Toggles whether the client is ready or not
-    public void toggleReady(){
+    public void toggleReady() {
       this.isReady = !this.isReady;
-      sendSystemMessage("You are now " + (isReady ? "ready" : "not ready"));
+      sendSystemMessage("You are now " + (isReady ? AnsiText.color("ready", AnsiText.GREEN) : AnsiText.color("not ready", AnsiText.RED)));
     }
-
 
     // Broadcasts a message to all clients except the sender
     public void globalBroadcast(String message, ClientHandler excludeClient) {
-      // Since all users are on different threads
-      // Synchronize the message being sent across all users
-      if (excludeClient.getCurrentRoom() == null){
-        synchronized (clients) {
-          for (ClientHandler client : clients) {
-            if (client != excludeClient && client.currentRoom == null) {
-              client.sendGlobalMessage(message);
-            }
+      if (excludeClient.getCurrentRoom() == null) {
+        for (ClientHandler client : clients) {
+          if (client != excludeClient && client.currentRoom == null) {
+            client.sendGlobalMessage(message);
           }
         }
       }
     }
 
     // Function to create a room
-    public void createRoom(String roomName){
-      synchronized (rooms) {
-        if (roomName.length() > 0){
-          if (!rooms.containsKey(roomName)){
-            Room room = new Room(roomName, this);
-            rooms.put(roomName, room);
-            sendSystemMessage("Room '" + roomName + "' created.");
-            System.out.println("Room '" + roomName + "' created by " + clientName);
-            joinRoom(roomName);
-          }
-          else {
-            sendSystemMessage("Room '" + roomName + "' already exists.");
-            System.out.println("Room creation failed: '" + roomName + "' already exists.");
-          }
-        }
+    public void createRoom(String roomName) {
+      if (roomName.length() > 0) {
+        Room newRoom = new Room(roomName, this);
+        if (rooms.putIfAbsent(roomName, newRoom) == null) {
+          sendSystemMessage("Room '" + roomName + "' created.");
+          Logger.info("Room '" + roomName + "' created by " + clientName);
+          joinRoom(roomName);
+        } 
         else {
-          sendSystemMessage("Room name cannot be empty.");
-          System.out.println("Room creation failed: Room name cannot be empty.");
+          sendSystemMessage("Room '" + roomName + "' already exists.");
+          Logger.warning("Room creation failed: '" + roomName + "' already exists.");
         }
+      } 
+      else {
+        sendSystemMessage("Room name cannot be empty.");
+        Logger.warning("Room creation failed: Room name cannot be empty.");
       }
-    } 
+    }
 
     // Function to join a room
-    public void joinRoom(String roomName){
-      synchronized (rooms) {
-        if (roomName.length() > 0){
-
-          Room room = rooms.get(roomName);
-          if (room != null){
-            if (room.isFull()){
-              sendSystemMessage("Room '" + roomName + "' is full.");
-              System.out.println("Join failed: Room '" + roomName + "' is full.");
+    public void joinRoom(String roomName) {
+      if (roomName.length() > 0) {
+        Room room = rooms.get(roomName);
+        if (room != null) {
+          if (room.isFull()) {
+            sendSystemMessage("Room '" + roomName + "' is full.");
+            Logger.warning("Join failed: Room '" + roomName + "' is full.");
+          } 
+          else {
+            if (getCurrentRoom() != null) {
+              leaveCurrentRoom();
             }
-            else{
-              if (getCurrentRoom() != null){
-                leaveCurrentRoom();
-              }
-              if (room.addClient(this)){
-                setCurrentRoom(room);            
-                sendSystemMessage("Joined room '" + roomName + "'.");
-                System.out.println(clientName + " joined room " + roomName);
-              }
-              else{
-                sendSystemMessage("Unable to join " + roomName);
-                System.out.println("Join failed: Unable to join room '" + roomName + "'");
-              }
+            if (room.addClient(this)) {
+              setCurrentRoom(room);
+              sendSystemMessage("Joined room '" + roomName + "'.");
+              Logger.info(clientName + " joined room " + roomName);
+            } 
+            else {
+              sendSystemMessage("Unable to join " + roomName);
+              Logger.error("Join failed: Unable to join room '" + roomName + "'");
             }
           }
-          else{
-            sendSystemMessage("Room '" + roomName + "' does not exist.");
-            System.out.println("Join failed: Room '" + roomName + "' does not exist.");
-          }
-        }
+        } 
         else {
-          sendSystemMessage("Please enter a room name.");
-          System.out.println("Join failed: Please enter a room name.");
+          sendSystemMessage("Room '" + roomName + "' does not exist.");
+          Logger.warning("Join failed: Room '" + roomName + "' does not exist.");
         }
+      } 
+      else {
+        sendSystemMessage("Please enter a room name.");
+        Logger.warning("Join failed: Please enter a room name.");
       }
-    }  
-    // Function to leave a room
-    public void leaveCurrentRoom(){
-      synchronized(rooms){
-        if (getCurrentRoom() != null){
-          Room room = getCurrentRoom();
-          room.removeClient(this);
+    }
 
-          sendSystemMessage("You have left the room.");
-          if (room.getClientCount() == 0){
-            rooms.remove(room.getRoomName());
-            System.out.println("Room '" + room.getRoomName() +"' has been deleted because it is empty.");
-          }
-          setCurrentRoom(null); 
+    // Function to leave a room
+    public void leaveCurrentRoom() {
+      if (getCurrentRoom() != null) {
+        Room room = getCurrentRoom();
+        room.removeClient(this);
+
+        sendSystemMessage("You have left the room.");
+        Logger.info(clientName + " has left room '" + room.getRoomName() + "'");
+        if (room.getClientCount() == 0) {
+          rooms.remove(room.getRoomName());
+          Logger.info("Room '" + room.getRoomName() + "' has been deleted because it is empty.");
         }
-        else{
-          sendSystemMessage("You are not in any room.");
-          System.out.println("User '" + clientName + "' attempted to leave a room but was not in any.");
-        }
+        setCurrentRoom(null);
+      } 
+      else {
+        sendSystemMessage("You are not in any room.");
+        Logger.warning("User '" + clientName + "' attempted to leave a room but was not in any.");
       }
     }
 
     // Function to list all rooms
-    public void listRooms(){
-      synchronized (rooms){
-        if (rooms.isEmpty()){
-          sendMessage("No rooms available.");
-        }
-        else {
-          sendSystemMessage("Available rooms:");
-          for (Room room : rooms.values()) {
-            sendMessage("- " + room.getRoomName() + " (" + room.getClientCount() + "/2)");
-          }
+    public void listRooms() {
+      if (rooms.isEmpty()) {
+        sendMessage("No rooms available.");
+      } 
+      else {
+        sendSystemMessage("Available rooms:");
+        for (Room room : rooms.values()) {
+          sendMessage("- " + room.getRoomName() + " (" + room.getClientCount() + "/2)");
         }
       }
     }
 
-    public synchronized Room getCurrentRoom(){
+    public Room getCurrentRoom() {
       return this.currentRoom;
     }
 
-    public synchronized void setCurrentRoom(Room room){
+    public void setCurrentRoom(Room room) {
       this.currentRoom = room;
     }
 
-    public String getClientName(){
+    public String getClientName() {
       return this.clientName;
     }
 
     // Lists the client's party
-    public void listParty(){
+    public void listParty() {
       this.party.listParty(this);
     }
 
     // Lists all available commands to the user
-    public void listHelp(){
+    public void listHelp() {
       this.sendSystemMessage("Commands: " + String.join(", ", commandHandler.getCommands().keySet()));
     }
 
-    // Closes the connection and removes the client from the list
+    // Closes the connection and removes the client from the set
     public void closeConnection() {
       try {
         if (clientName != null) {
-          System.out.println(clientName + " has disconnected.");
+          Logger.info(clientName + " has disconnected.");
           sendSystemMessage("You have been disconnected.");
         }
 
-        if (getCurrentRoom() != null){
+        if (getCurrentRoom() != null) {
           leaveCurrentRoom();
         }
 
@@ -327,24 +316,22 @@ public class Server implements Runnable {
         if (in != null) in.close();
         if (out != null) out.close();
         if (socket != null && !socket.isClosed()) socket.close();
-        System.out.println("Total Connections: " + clients.size());
-      } catch (IOException e) {
-        System.out.println("Error closing connection for " + clientName + ": " + e.getMessage());
+        Logger.info("Total Connections: " + clients.size());
+      } 
+      catch (IOException e) {
+        Logger.error("Error closing connection for " + clientName + ": " + e.getMessage());
       }
     }
 
-
-
-    private boolean validateUser(String username, String password){
-      try{
-        return DatabaseManager.validateUser(username, password); }
-      catch (SQLException e){
+    private boolean validateUser(String username, String password) {
+      try {
+        return DatabaseManager.validateUser(username, password);
+      } 
+      catch (SQLException e) {
+        Logger.error("Database error during user validation: " + e.getMessage());
         return false;
       }
     }
-
   }
-
- 
 }
 

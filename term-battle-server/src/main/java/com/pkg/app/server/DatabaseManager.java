@@ -12,6 +12,8 @@ import java.util.ArrayList;
 import java.util.List;
 import com.pkg.app.party.monster.Monster;
 import com.pkg.app.party.monster.Type;
+import com.pkg.app.server.auth.PasswordManager;
+import com.pkg.app.server.text.AnsiText;
 
 
 public abstract class DatabaseManager {
@@ -85,7 +87,6 @@ public abstract class DatabaseManager {
     }
   }
 
-
   public static boolean validateUser(String name, String password) throws SQLException {
     con = getConnection(); 
     PreparedStatement stmt = null;
@@ -100,9 +101,17 @@ public abstract class DatabaseManager {
 
       if (rs.next()) {
         // If user exists, validate password
-        // TODO: Implement password hashing
         String storedPassword = rs.getString("password");
-        return storedPassword.equals(password);  
+        // Here we need to unhash and check the password
+        // Check if the stored password unhashed == the user inputted password
+        boolean passed = PasswordManager.compare(storedPassword, password);
+        if (passed){
+          System.out.println(AnsiText.color("Successfully authenticated: " + name, AnsiText.GREEN));
+        }
+        else{
+          System.out.println(AnsiText.color("Authentication failed: " + name, AnsiText.RED));
+        }
+        return passed;
       } else {
         // If user doesn't exist, create a new user
         String insertUserQuery = """
@@ -111,10 +120,10 @@ public abstract class DatabaseManager {
           """;
         PreparedStatement insertStmt = con.prepareStatement(insertUserQuery);
         insertStmt.setString(1, name);
-        insertStmt.setString(2, password); 
+        insertStmt.setString(2, PasswordManager.hash(password)); 
         insertStmt.setTimestamp(3, Timestamp.from(Instant.now()));
         insertStmt.executeUpdate();
-        System.out.println("New user created: " + name);
+        System.out.println(AnsiText.color("New user created: " + name, AnsiText.GREEN));
         return true;  
       }
     } finally {
