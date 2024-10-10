@@ -111,7 +111,7 @@ public class Room {
             partyList.append(c.getClientName()).append("'s Party:\n");
             for (Monster monster : party.getMonsters()) {
               partyList.append("- ").append(monster.getName())
-                .append(" (Type: ").append(monster.getType())
+                .append(" (").append(monster.getType())
                 .append(", Health: ").append(monster.getHealth())
                 .append(", Attack: ").append(monster.getAttack())
                 .append(", Speed: ").append(monster.getSpeed()).append(")\n");
