@@ -8,8 +8,6 @@ public class Move {
   private int damage;
   private Type type;
 
-
-
   public Move(String name, int damage, Type type) {
     this.name = name;
     this.damage = damage;

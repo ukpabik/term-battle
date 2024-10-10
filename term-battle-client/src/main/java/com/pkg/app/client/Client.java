@@ -63,7 +63,6 @@ public class Client {
   // Listens for connections across the server
   public void start() {
     Scanner scan = new Scanner(System.in);
-    System.out.println("Type /help to see available commands");
 
     while (true) {
       String input = scan.nextLine();

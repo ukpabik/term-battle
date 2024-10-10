@@ -93,14 +93,18 @@ public class Server implements Runnable {
 
         // Check if the user and password are in the system
         while (attempts < MAX_ATTEMPTS) {
+
           String password = in.readLine().strip();
+
           if (validateUser(clientName, password)) {
             out.println(AnsiText.color("Login successful... You are now connected!", AnsiText.GREEN));
+            out.println(AnsiText.color("Type /help for a list of commands.", AnsiText.YELLOW));
             Logger.info(clientName + " has connected to the server.");
             globalBroadcast(clientName + " has connected to the server.", this);
             this.setCurrentRoom(null);
             return;
-          } else {
+          } 
+          else {
             attempts++;
             Logger.warning("Invalid login attempt for " + clientName + ", " + (MAX_ATTEMPTS - attempts) + " attempts left.");
             out.println(AnsiText.color("Invalid username or password. Please try again.", AnsiText.RED));
@@ -111,7 +115,8 @@ public class Server implements Runnable {
         out.println(AnsiText.color("Too many login attempts. Please try again later.", AnsiText.RED));
         closeConnection();
 
-      } catch (IOException e) {
+      } 
+      catch (IOException e) {
         Logger.error("Error initializing client handler: " + e.getMessage());
         closeConnection();
       }
@@ -130,9 +135,11 @@ public class Server implements Runnable {
           }
           commandHandler.executeCommand(message, this);
         }
-      } catch (IOException e) {
+      } 
+      catch (IOException e) {
         Logger.warning("Connection lost with " + clientName);
-      } finally {
+      } 
+      finally {
         Logger.info("Closing the connection with: " + clientName);
         closeConnection();
       }

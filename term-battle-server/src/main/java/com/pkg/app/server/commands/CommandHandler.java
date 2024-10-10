@@ -2,6 +2,7 @@ package com.pkg.app.server.commands;
 
 import com.pkg.app.server.Server.ClientHandler;
 import com.pkg.app.server.Logger;
+import com.pkg.app.party.monster.Type;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -34,6 +35,8 @@ public class CommandHandler {
     commandMap.put("start", new StartCommand());
     commandMap.put("enemy", new EnemyCommand());
     commandMap.put("list", new ListCommand());
+    commandMap.put("exit", new ExitCommand());
+    commandMap.put("type", new TypeInfoCommand());
     // TODO: Add more commands
   }
 
@@ -117,6 +120,22 @@ public class CommandHandler {
     }
   }
 
+  // /type <type>
+  private class TypeInfoCommand implements Command {
+    @Override
+    public void execute(ClientHandler client, String[] args) {
+      if (args.length < 2) {
+        client.sendSystemMessage("Usage: /type <type name>");
+        Logger.warning("User '" + client.getClientName() + "' used /type without specifying a type name.");
+        return;
+      }
+
+      String type = args[1];
+      client.sendSystemMessage("Type: " + type + ", Weaknesses: " + Type.WEAKNESSES.get(type));
+      Logger.debug("User '" + client.getClientName() + "' requested info on type '" + type + "'.");
+    }
+  }
+
   // /party
   private class PartyCommand implements Command {
     @Override
@@ -132,6 +151,15 @@ public class CommandHandler {
     public void execute(ClientHandler client, String[] args) {
       client.listHelp();
       Logger.debug("User '" + client.getClientName() + "' requested help.");
+    }
+  }
+
+  // /exit
+  private class ExitCommand implements Command {
+    @Override
+    public void execute(ClientHandler client, String[] args) {
+      client.sendSystemMessage("Bye!");
+      client.closeConnection();
     }
   }
 

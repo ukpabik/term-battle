@@ -33,6 +33,7 @@ public abstract class DatabaseManager {
     connection.close();
   }
 
+
   public static void createMonsterTable() throws SQLException {
     con = getConnection();
     con.createStatement().execute("""
@@ -87,7 +88,28 @@ public abstract class DatabaseManager {
     }
   }
 
+  // Inserts a list of monsters into the database
+  public static void insertMonsters(List<Monster> monsters) throws SQLException {
+    con = getConnection();
+    for (Monster monster : monsters) {
+      String query = "INSERT INTO monsters (monster_name, health, attack, speed, type) VALUES (?, ?, ?, ?, ?)";
+      try (PreparedStatement pstmt = con.prepareStatement(query)) {
+        pstmt.setString(1, monster.getName());
+        pstmt.setInt(2, monster.getHealth());
+        pstmt.setInt(3, monster.getAttack());
+        pstmt.setInt(4, monster.getSpeed());
+        pstmt.setString(5, monster.getType().getName());
+        pstmt.executeUpdate();
+      } catch (SQLException e) {
+        System.err.println("Error inserting monster: " + monster.getName());
+        e.printStackTrace();
+      }
+    }
+  }
+
+  // Checks if a user exists in the database, if not creates a new user
   public static boolean validateUser(String name, String password) throws SQLException {
+
     con = getConnection(); 
     PreparedStatement stmt = null;
     ResultSet rs = null;
@@ -132,6 +154,8 @@ public abstract class DatabaseManager {
       if (con != null) con.close();
     }
   }
+
+  // Returns a list of 5 random monsters
   public static List<Monster> getRandomMonsters() {
     List<Monster> monsters = new ArrayList<>();
     try {

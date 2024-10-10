@@ -5,6 +5,7 @@ import at.favre.lib.crypto.bcrypt.BCrypt;
 // Util class for handling password safety and authentication
 public class PasswordManager {
 
+  // Hashes a password
   public static String hash(String password){
     if (password.length() > 0){
       String hashedString = BCrypt.withDefaults().hashToString(12, password.toCharArray());
@@ -13,6 +14,7 @@ public class PasswordManager {
     return "";
   }
 
+  // Checks if the password matches the hashed password
   public static boolean compare(String hashedPassword, String unhashedPassword){
     if (unhashedPassword.length() > 0){
       BCrypt.Result result = BCrypt.verifyer().verify(unhashedPassword.toCharArray(), hashedPassword);
