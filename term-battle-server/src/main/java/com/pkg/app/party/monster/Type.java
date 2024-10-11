@@ -42,6 +42,16 @@ public class Type {
     return this.name;
   }
 
+  public static double calculateFloat(Type attacker, Type defender){
+    if (Type.WEAKNESSES.get(defender.getName()).contains(attacker.getName())) {
+      return 1.2;
+    } else if (Type.WEAKNESSES.get(attacker.getName()).contains(defender.getName())) {
+      return 0.75;
+    }
+
+    return 1;
+  }
+
   @Override
   public String toString() {
     return "Type: " + this.name + ", Weaknesses: " + this.weaknesses;

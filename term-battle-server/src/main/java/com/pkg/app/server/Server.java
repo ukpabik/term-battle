@@ -14,6 +14,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
 import com.pkg.app.server.Logger;
+import com.pkg.app.game.Game;
 
 public class Server implements Runnable {
 
@@ -285,6 +286,13 @@ public class Server implements Runnable {
       }
     }
 
+    public Game getCurrentGame(){
+      if (currentRoom != null){
+        return currentRoom.getGame();
+      }
+      return null;
+    }
+
     public Room getCurrentRoom() {
       return this.currentRoom;
     }
@@ -317,6 +325,9 @@ public class Server implements Runnable {
 
         if (getCurrentRoom() != null) {
           leaveCurrentRoom();
+        }
+        if (getCurrentGame() != null){
+          getCurrentGame().handleClientDisconnection(this);
         }
 
         clients.remove(this);

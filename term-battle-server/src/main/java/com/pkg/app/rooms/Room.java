@@ -6,6 +6,8 @@ import com.pkg.app.server.Server.ClientHandler;
 import java.util.Collections;
 import com.pkg.app.party.Party;
 import com.pkg.app.party.monster.Monster;
+import com.pkg.app.game.Game;
+import com.pkg.app.server.Logger;
 
 
 // This class represents a room in the game. It has a list of clients in the room
@@ -14,6 +16,7 @@ public class Room {
   private static final int MAX_CAPACITY = 2;
   private String roomName;
   private List<ClientHandler> clients = Collections.synchronizedList(new ArrayList<>());
+  private Game currentGame;
   private ClientHandler host;
 
   public Room(String roomName, ClientHandler host) {
@@ -128,14 +131,15 @@ public class Room {
 
 
   // Function that starts the room 
-  public void startBattle(){
+  public synchronized void startBattle(){
     if (clients.size() < 2) {
       host.sendMessage("There are not enough players in the room to start the battle.");
     }
     else{
       globalRoomBroadcast("Battle started!");
 
-      // TODO: Start the battle -> Do the logic
+      this.currentGame = new Game(new ArrayList<>(clients));
+      Logger.info("Game started in room '" + roomName + "'.");
     }
 
   }
@@ -188,6 +192,10 @@ public class Room {
     }
   }
 
+
+  public Game getGame(){
+    return this.currentGame;
+  }
 
   // Gets the client count in the current room
   public int getClientCount(){

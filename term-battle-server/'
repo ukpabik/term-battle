@@ -1,0 +1,67 @@
+package com.pkg.app.game;
+
+import java.io.IOException;
+import java.io.PrintWriter;
+
+public class Game {
+  private boolean isEnded;
+  private boolean isOngoing;
+  private PrintWriter out;
+
+
+  public Game(PrintWriter out){
+    this.isOngoing = true;
+    this.isEnded = false;
+    this.out = out;
+    this.startGame();
+  }
+
+
+
+  public boolean getIsEnded(){
+    return this.isEnded;
+  }
+
+  public boolean getIsOngoing(){
+    return this.isOngoing;
+  }
+
+
+  public void setIsOngoing(boolean status){
+    this.isOngoing = status;
+  }
+
+  public void setIsEnded(boolean status){
+    this.isEnded = status;
+  }
+
+
+  public void endGame(){
+    //TODO: COMPLETE LOGIC HERE 
+  }
+
+  public void startGame(){
+    //TODO: COMPLETE LOGIC HERE 
+    System.out.println("GAME START");
+    new Thread(new Listen()).start();
+  }
+
+
+  private class Listen implements Runnable {
+    public void run() {
+      int count = 0;
+
+      try{
+        while (count < 100){
+          count++;
+          System.out.println(count);
+        }
+      }
+      //TODO: CHANGE EXCEPTION
+      catch (Exception e){
+        System.out.println("Game thread closed!!!!");
+      }
+    }
+  }
+
+}

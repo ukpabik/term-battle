@@ -5,6 +5,8 @@ import com.pkg.app.server.Logger;
 import com.pkg.app.party.monster.Type;
 import java.util.HashMap;
 import java.util.Map;
+import com.pkg.app.party.monster.Monster;
+import com.pkg.app.party.monster.Move;
 
 public class CommandHandler {
 
@@ -37,6 +39,8 @@ public class CommandHandler {
     commandMap.put("list", new ListCommand());
     commandMap.put("exit", new ExitCommand());
     commandMap.put("type", new TypeInfoCommand());
+    commandMap.put("moves", new MovesCommand());
+    commandMap.put("attack", new AttackCommand());
     // TODO: Add more commands
   }
 
@@ -215,9 +219,70 @@ public class CommandHandler {
     }
   }
 
+  // /attack
+  private class AttackCommand implements Command {
+    @Override
+    public void execute(ClientHandler client, String[] args) {
+      if (!checkClientInGame(client)) {
+        Logger.warning("User '" + client.getClientName() + "' is not in game.");
+        return;
+      }
+
+      if (args.length < 2) {
+        client.sendSystemMessage("Usage: /attack <move name>");
+        Logger.warning("User '" + client.getClientName() + "' used /attack without specifying a move name.");
+        return;
+      }
+      
+      //TODO: Handle moves here!
+
+      String moveName = args[1];
+
+      client.getCurrentRoom().getGame().handleMove(moveName, client);
+
+      Logger.debug("User '" + client.getClientName() + "' used a move.");
+    }
+  }
+
+  // /moves
+  private class MovesCommand implements Command {
+    @Override
+    public void execute(ClientHandler client, String[] args) {
+      if (!checkClientInGame(client)) {
+        Logger.warning("User '" + client.getClientName() + "' is not in game.");
+        return;
+      }
+
+      Monster currentMonster = client.getParty().getCurrentMonster();
+      if (currentMonster != null) {
+        StringBuilder sb = new StringBuilder("Your " + currentMonster.getName() + "'s Moves:\n");
+        for (Move move : currentMonster.getMoves()) {
+          sb.append("- ").append(move.getName())
+            .append(" (Type: ").append(move.getType().getName())
+            .append(", Damage: ").append(move.getDamage()).append(")\n");
+        }
+        client.sendMessage(sb.toString());
+      } else {
+        client.sendSystemMessage("You have no active monster.");
+      }
+    }
+  }
+
   public boolean checkClient(ClientHandler client) {
     if (client.getCurrentRoom() == null) {
       client.sendSystemMessage("You are not in a room.");
+      return false;
+    }
+    return true;
+  }
+
+  public boolean checkClientInGame(ClientHandler client) {
+    if (client.getCurrentRoom() == null) {
+      client.sendSystemMessage("You are not in a room.");
+      return false;
+    }
+    if (client.getCurrentGame() == null) {
+      client.sendSystemMessage("You are not in game.");
       return false;
     }
     return true;
