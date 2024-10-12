@@ -1,20 +1,23 @@
 # TermBattle
 
-## Table of Contents
 
-- [Overview](#overview)
-- [Installation](#installation)
-- [Running the Application](#running-the-application)
 
 ## Overview
 TermBattle is a real-time multiplayer game that runs entirely in the terminal. Players connect to a server and engage in battles using text-based commands. The game emphasizes strategy and quick thinking, offering a unique experience compared to traditional graphical games.
+
+## Table of Contents
+- [Demo](#demo)
+- [Installation](#installation)
+- [Running the Application](#running-the-application)
 
 ---
 
 
 
+## Demo
 [Demo](https://github.com/user-attachments/assets/d5691d77-90fb-43cb-82ab-2c44e57e1ba2)
 
+---
 
 
 ## Installation
