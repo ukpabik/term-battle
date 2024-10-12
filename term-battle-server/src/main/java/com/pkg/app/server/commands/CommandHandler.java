@@ -3,8 +3,13 @@ package com.pkg.app.server.commands;
 import com.pkg.app.server.Server.ClientHandler;
 import com.pkg.app.server.Logger;
 import com.pkg.app.party.monster.Type;
+import com.pkg.app.party.monster.Monster;
+import com.pkg.app.party.monster.Move;
+import com.pkg.app.server.text.AnsiText;
+import com.pkg.app.server.text.TypeColor;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.List;
 
 public class CommandHandler {
 
@@ -13,31 +18,50 @@ public class CommandHandler {
     void execute(ClientHandler client, String[] args);
   }
 
-  private Map<String, Command> commandMap = new HashMap<>();
+  private Map<String, Command> lobbyCommands = new HashMap<>();
+  private Map<String, Command> roomCommands = new HashMap<>();
+  private Map<String, Command> gameCommands = new HashMap<>();
 
   public CommandHandler() {
-    registerCommands();
-  }
-
-  public Map<String, Command> getCommands() {
-    return commandMap;
+    registerGameCommands();
+    registerLobbyCommands();
+    registerRoomCommands();
   }
 
   // Method to register all commands
-  private void registerCommands() {
-    commandMap.put("join", new JoinCommand());
-    commandMap.put("create", new CreateCommand());
-    commandMap.put("leave", new LeaveCommand());
-    commandMap.put("rooms", new ListRoomsCommand());
-    commandMap.put("party", new PartyCommand());
-    commandMap.put("help", new HelpCommand());
-    commandMap.put("ready", new ReadyCommand());
-    commandMap.put("start", new StartCommand());
-    commandMap.put("enemy", new EnemyCommand());
-    commandMap.put("list", new ListCommand());
-    commandMap.put("exit", new ExitCommand());
-    commandMap.put("type", new TypeInfoCommand());
-    // TODO: Add more commands
+  private void registerGameCommands() {
+    gameCommands.put("party", new PartyCommand());
+    gameCommands.put("help", new HelpCommand());
+    gameCommands.put("enemy", new EnemyCommand());
+    gameCommands.put("list", new ListCommand());
+    gameCommands.put("exit", new ExitCommand());
+    gameCommands.put("type", new TypeInfoCommand());
+    gameCommands.put("moves", new MovesCommand());
+    gameCommands.put("attack", new AttackCommand());
+  }
+
+  private void registerLobbyCommands() {
+    lobbyCommands.put("create", new CreateCommand());
+    lobbyCommands.put("join", new JoinCommand());
+    lobbyCommands.put("rooms", new ListRoomsCommand());
+    lobbyCommands.put("help", new HelpCommand());
+    lobbyCommands.put("exit", new ExitCommand());
+  }
+
+  // Method to register all commands
+  private void registerRoomCommands() {
+    roomCommands.put("join", new JoinCommand());
+    roomCommands.put("create", new CreateCommand());
+    roomCommands.put("rooms", new ListRoomsCommand());
+    roomCommands.put("party", new PartyCommand());
+    roomCommands.put("help", new HelpCommand());
+    roomCommands.put("enemy", new EnemyCommand());
+    roomCommands.put("list", new ListCommand());
+    roomCommands.put("exit", new ExitCommand());
+    roomCommands.put("type", new TypeInfoCommand());
+    roomCommands.put("leave", new LeaveCommand());
+    roomCommands.put("start", new StartCommand());
+    roomCommands.put("ready", new ReadyCommand());
   }
 
   // Method to execute commands
@@ -56,10 +80,20 @@ public class CommandHandler {
 
     String[] parts = command.trim().split("\\s+");
     String commandName = parts[0].substring(1).toLowerCase();
+    Map<String, Command> availableCommands;
 
-    Command commandObj = commandMap.get(commandName);
+    if (client.getCurrentGame() != null) {
+      availableCommands = gameCommands;
+    } 
+    else if (client.getCurrentRoom() != null) {
+      availableCommands = roomCommands;
+    }
+    else {
+      availableCommands = lobbyCommands;
+    }
+
+    Command commandObj = availableCommands.get(commandName);
     if (commandObj != null) {
-      Logger.debug("Executing command '" + commandName + "' for user '" + client.getClientName() + "'");
       commandObj.execute(client, parts);
     } 
     else {
@@ -79,7 +113,6 @@ public class CommandHandler {
       }
       String roomName = args[1];
       client.joinRoom(roomName);
-      Logger.info("User '" + client.getClientName() + "' is attempting to join room '" + roomName + "'");
     }
   }
 
@@ -94,7 +127,6 @@ public class CommandHandler {
       }
       String roomName = args[1];
       client.createRoom(roomName);
-      Logger.info("User '" + client.getClientName() + "' is attempting to create room '" + roomName + "'");
     }
   }
 
@@ -107,7 +139,6 @@ public class CommandHandler {
         return;
       }
       client.leaveCurrentRoom();
-      Logger.info("User '" + client.getClientName() + "' has left their current room.");
     }
   }
 
@@ -116,7 +147,6 @@ public class CommandHandler {
     @Override
     public void execute(ClientHandler client, String[] args) {
       client.listRooms();
-      Logger.debug("User '" + client.getClientName() + "' requested a list of rooms.");
     }
   }
 
@@ -130,9 +160,36 @@ public class CommandHandler {
         return;
       }
 
-      String type = args[1];
-      client.sendSystemMessage("Type: " + type + ", Weaknesses: " + Type.WEAKNESSES.get(type));
-      Logger.debug("User '" + client.getClientName() + "' requested info on type '" + type + "'.");
+      String typeInput = args[1].toLowerCase(); // Ensure case-insensitivity
+      List<String> weaknesses = Type.WEAKNESSES.get(typeInput);
+
+      if (weaknesses == null) {
+        client.sendSystemMessage("Unknown type: " + AnsiText.color(typeInput, AnsiText.RED));
+        return;
+      }
+
+      String coloredType = TypeColor.colorType(typeInput);
+
+      String coloredWeaknesses;
+      if (weaknesses.isEmpty()) {
+        coloredWeaknesses = AnsiText.color("None", AnsiText.WHITE);
+      } 
+      else {
+        StringBuilder weaknessesBuilder = new StringBuilder();
+        for (int i = 0; i < weaknesses.size(); i++) {
+          String weakness = weaknesses.get(i);
+          String coloredWeakness = TypeColor.colorType(weakness);
+          weaknessesBuilder.append(coloredWeakness);
+
+          if (i < weaknesses.size() - 1) {
+            weaknessesBuilder.append(", ");
+          }
+        }
+        coloredWeaknesses = weaknessesBuilder.toString();
+      }
+      String coloredTypeLabel = AnsiText.color("Type: ", AnsiText.WHITE);
+      String message = coloredTypeLabel + coloredType + ", Weaknesses: " + coloredWeaknesses;
+      client.sendSystemMessage(message);
     }
   }
 
@@ -141,7 +198,6 @@ public class CommandHandler {
     @Override
     public void execute(ClientHandler client, String[] args) {
       client.listParty();
-      Logger.debug("User '" + client.getClientName() + "' requested their party information.");
     }
   }
 
@@ -149,8 +205,25 @@ public class CommandHandler {
   private class HelpCommand implements Command {
     @Override
     public void execute(ClientHandler client, String[] args) {
-      client.listHelp();
-      Logger.debug("User '" + client.getClientName() + "' requested help.");
+      StringBuilder sb = new StringBuilder();
+      Map<String, Command> availableCommands;
+
+      if (client.getCurrentGame() != null) {
+        availableCommands = gameCommands;
+      } 
+      else if (client.getCurrentRoom() != null) {
+        availableCommands = roomCommands;
+      } 
+      else {
+        availableCommands = lobbyCommands;
+      }
+
+      sb.append("Available Commands:\n");
+      for (String cmd : availableCommands.keySet()) {
+        sb.append("/").append(cmd).append("\n");
+      }
+
+      client.sendSystemMessage(sb.toString());
     }
   }
 
@@ -172,7 +245,6 @@ public class CommandHandler {
         return;
       }
       client.toggleReady();
-      Logger.info("User '" + client.getClientName() + "' toggled ready status to " + client.getReady());
     }
   }
 
@@ -185,7 +257,6 @@ public class CommandHandler {
         return;
       }
       client.getCurrentRoom().start(client);
-      Logger.info("User '" + client.getClientName() + "' initiated a game start in room '" + client.getCurrentRoom().getRoomName() + "'");
     }
   }
 
@@ -198,7 +269,6 @@ public class CommandHandler {
         return;
       }
       client.getCurrentRoom().listOtherParties(client);
-      Logger.debug("User '" + client.getClientName() + "' requested enemy party information.");
     }
   }
 
@@ -211,7 +281,64 @@ public class CommandHandler {
         return;
       }
       client.getCurrentRoom().listAllUsers(client);
-      Logger.debug("User '" + client.getClientName() + "' requested a list of all users in the room.");
+    }
+  }
+
+  // /attack
+  private class AttackCommand implements Command {
+    @Override
+    public void execute(ClientHandler client, String[] args) {
+      if (!checkClientInGame(client)) {
+        Logger.warning("User '" + client.getClientName() + "' is not in game.");
+        return;
+      }
+
+      if (args.length < 2) {
+        client.sendSystemMessage("Usage: /attack <move name>");
+        Logger.warning("User '" + client.getClientName() + "' used /attack without specifying a move name.");
+        return;
+      }
+      else{
+        String moveName;
+        if (args.length > 2){
+          moveName = "";
+          for (int i = 1; i < args.length; i++){
+            moveName += args[i] + " ";
+          }
+
+        }
+        else{
+          moveName = args[1];
+        }
+        client.getCurrentRoom().getGame().handleMove(moveName.trim(), client);
+
+      }
+
+
+    }
+  }
+
+  // /moves
+  private class MovesCommand implements Command {
+    @Override
+    public void execute(ClientHandler client, String[] args) {
+      if (!checkClientInGame(client)) {
+        Logger.warning("User '" + client.getClientName() + "' is not in game.");
+        return;
+      }
+
+      Monster currentMonster = client.getParty().getCurrentMonster();
+      if (currentMonster != null) {
+        StringBuilder sb = new StringBuilder("Your " + currentMonster.getName() + "'s Moves:\n");
+        for (Move move : currentMonster.getMoves()) {
+          sb.append("- ").append(move.getName())
+            .append(" (").append(move.getType().toString())
+            .append(", Damage: ").append(move.getDamage()).append(")\n");
+        }
+        client.sendMessage(sb.toString());
+      } else {
+        client.sendSystemMessage("You have no active monster.");
+      }
     }
   }
 
@@ -222,5 +349,16 @@ public class CommandHandler {
     }
     return true;
   }
-}
 
+  public boolean checkClientInGame(ClientHandler client) {
+    if (client.getCurrentRoom() == null) {
+      client.sendSystemMessage("You are not in a room.");
+      return false;
+    }
+    if (client.getCurrentGame() == null) {
+      client.sendSystemMessage("You are not in game.");
+      return false;
+    }
+    return true;
+  }
+}

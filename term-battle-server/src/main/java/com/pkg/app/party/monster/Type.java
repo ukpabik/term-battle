@@ -3,6 +3,7 @@ package com.pkg.app.party.monster;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import com.pkg.app.server.text.TypeColor;
 
 public class Type {
   private String name;
@@ -42,9 +43,21 @@ public class Type {
     return this.name;
   }
 
+  public static double calculateFloat(Type attacker, Type defender){
+    if (Type.WEAKNESSES.get(defender.getName()).contains(attacker.getName())) {
+      return 1.7;
+    } 
+    else if (Type.WEAKNESSES.get(attacker.getName()).contains(defender.getName())) {
+      return 0.7;
+    }
+
+    return 1;
+  }
+
   @Override
   public String toString() {
-    return "Type: " + this.name + ", Weaknesses: " + this.weaknesses;
+    return "Type: " + TypeColor.colorType(this.name);
   }
+
 }
 

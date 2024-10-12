@@ -10,7 +10,8 @@ public class Monster {
   private int attack;
   private int speed;
   private Type type;
-
+  private List<Move> moves;
+  private boolean isFainted;
 
   public Monster(String name, int health, int attack, int speed, Type type) {
     this.name = name;
@@ -18,8 +19,16 @@ public class Monster {
     this.attack = attack;
     this.speed = speed;
     this.type = type;
+    this.isFainted = false;
   }
 
+  public boolean getIsFainted(){
+    return this.isFainted;
+  }
+
+  public void setIsFainted(boolean fainted){
+    this.isFainted = fainted;
+  }
 
   public String getName() {
     return name;
@@ -45,16 +54,28 @@ public class Monster {
     this.health = health;
   }
 
-
   public void setAttack(int attack) {
     this.attack = attack;
   }
 
+  public List<Move> getMoves() {
+    return moves;
+  }
 
-  // Global method to get a list of random monsters
+  public void setMoves(List<Move> moves) {
+    this.moves = moves;
+  }
+
+  public void assignRandomMoves() {
+    if (this.moves == null || this.moves.isEmpty()) {
+      this.moves = Move.getRandomMoves(this.type.getName(), 4);
+    }
+  }
+
+  // Static method to get a list of random monsters
   public static List<Monster> getRandomMonsters() {
     List<Monster> monsters = DatabaseManager.getRandomMonsters();
     return monsters;
   }
-
 }
+

@@ -6,6 +6,9 @@ import com.pkg.app.server.Server.ClientHandler;
 import java.util.Collections;
 import com.pkg.app.party.Party;
 import com.pkg.app.party.monster.Monster;
+import com.pkg.app.game.Game;
+import com.pkg.app.server.Logger;
+import com.pkg.app.server.text.AnsiText;
 
 
 // This class represents a room in the game. It has a list of clients in the room
@@ -14,6 +17,7 @@ public class Room {
   private static final int MAX_CAPACITY = 2;
   private String roomName;
   private List<ClientHandler> clients = Collections.synchronizedList(new ArrayList<>());
+  private Game currentGame;
   private ClientHandler host;
 
   public Room(String roomName, ClientHandler host) {
@@ -110,8 +114,12 @@ public class Room {
           if (party != null) {
             partyList.append(c.getClientName()).append("'s Party:\n");
             for (Monster monster : party.getMonsters()) {
-              partyList.append("- ").append(monster.getName())
-                .append(" (").append(monster.getType())
+              String monsterName = monster.getName();
+              if (monster.getIsFainted()){
+                monsterName = AnsiText.color(monsterName, AnsiText.RED_BACKGROUND);
+              }
+              partyList.append("- ").append(monsterName)
+                .append(" (").append(monster.getType().toString())
                 .append(", Health: ").append(monster.getHealth())
                 .append(", Attack: ").append(monster.getAttack())
                 .append(", Speed: ").append(monster.getSpeed()).append(")\n");
@@ -128,14 +136,15 @@ public class Room {
 
 
   // Function that starts the room 
-  public void startBattle(){
+  public synchronized void startBattle(){
     if (clients.size() < 2) {
       host.sendMessage("There are not enough players in the room to start the battle.");
     }
     else{
       globalRoomBroadcast("Battle started!");
 
-      // TODO: Start the battle -> Do the logic
+      this.currentGame = new Game(new ArrayList<>(clients), this);
+      Logger.info("Game started in room '" + roomName + "'.");
     }
 
   }
@@ -146,6 +155,10 @@ public class Room {
 
   public void setHost(ClientHandler host){
     this.host = host;
+  }
+
+  public void setGame(Game game){
+    this.currentGame = game;
   }
 
   // If a user leaves the room, switch the host
@@ -188,6 +201,10 @@ public class Room {
     }
   }
 
+
+  public Game getGame(){
+    return this.currentGame;
+  }
 
   // Gets the client count in the current room
   public int getClientCount(){

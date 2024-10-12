@@ -160,7 +160,7 @@ public abstract class DatabaseManager {
     List<Monster> monsters = new ArrayList<>();
     try {
       con = getConnection();
-      PreparedStatement stmt = con.prepareStatement("SELECT * FROM monsters ORDER BY RANDOM() LIMIT 5");
+      PreparedStatement stmt = con.prepareStatement("SELECT * FROM monsters ORDER BY RANDOM() LIMIT 4");
       ResultSet rs = stmt.executeQuery();
       while (rs.next()) {
         String name = rs.getString("monster_name");
@@ -174,5 +174,32 @@ public abstract class DatabaseManager {
       e.printStackTrace();
     }
     return monsters;
+  }
+
+
+  public static void addWinner(String name){
+    try {
+      con = getConnection();
+      PreparedStatement stmt = con.prepareStatement("UPDATE users SET wins = wins + 1, games_played = games_played + 1 WHERE username = ?");
+      stmt.setString(1, name);
+      stmt.executeUpdate();
+      Logger.info(name + " won their game!");
+    }
+    catch (SQLException e){
+      e.printStackTrace();
+    }
+  }
+
+  public static void addLoser(String name){
+    try {
+      con = getConnection();
+      PreparedStatement stmt = con.prepareStatement("UPDATE users SET losses = losses + 1, games_played = games_played + 1 WHERE username = ?");
+      stmt.setString(1, name);
+      stmt.executeUpdate();
+      Logger.info(name + " lost their game!");
+    }
+    catch (SQLException e){
+      e.printStackTrace();
+    }
   }
 }
