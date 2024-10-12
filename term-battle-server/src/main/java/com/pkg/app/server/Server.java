@@ -168,6 +168,11 @@ public class Server implements Runnable {
       out.println(AnsiText.color("[System] " + message, AnsiText.RED));
     }
 
+    // Sends a message from within the game
+    public void sendGameMessage(String message) {
+      out.println(AnsiText.color("[Game] " + message, AnsiText.PURPLE_BRIGHT));
+    }
+
     // Returns the client's current party
     public Party getParty() {
       return this.party;

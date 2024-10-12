@@ -1,7 +1,6 @@
 package com.pkg.app.game;
 
 import com.pkg.app.server.Server.ClientHandler;
-import com.pkg.app.server.Logger;
 import com.pkg.app.server.text.AnsiText;
 import com.pkg.app.party.monster.Monster;
 import com.pkg.app.party.monster.Type;
@@ -9,6 +8,7 @@ import com.pkg.app.party.monster.Move;
 import com.pkg.app.rooms.Room;
 import com.pkg.app.server.DatabaseManager;
 
+import java.util.Random;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -21,6 +21,8 @@ public class Game {
     private Room room;
     private String winnerName;
     private String loserName;
+    private final double DAMAGE_MULTIPLIER = 2.6;
+    private Random random = new Random();
 
     public Game(List<ClientHandler> clients, Room room) {
         this.clients.addAll(clients);
@@ -66,8 +68,8 @@ public class Game {
     public void startGame() {
 
         for (ClientHandler client : clients) {
-            client.sendSystemMessage(AnsiText.color("The game has started! Good luck!", AnsiText.GREEN));
-            client.sendSystemMessage(AnsiText.color("Your current monster is " + client.getParty().getCurrentMonster().getName(), AnsiText.CYAN));
+            client.sendGameMessage(AnsiText.color("The game has started! Good luck!", AnsiText.GREEN));
+            client.sendGameMessage(AnsiText.color("Your current monster is " + client.getParty().getCurrentMonster().getName(), AnsiText.CYAN));
         }
     }
 
@@ -78,13 +80,13 @@ public class Game {
         }
 
         if (clientMoves.containsKey(client)) {
-            client.sendSystemMessage(AnsiText.color("Wait for your opponent to submit their move...", AnsiText.YELLOW));
+            client.sendGameMessage(AnsiText.color("Wait for your opponent to submit their move...", AnsiText.YELLOW));
             return;
         }
 
         Monster currentMonster = client.getParty().getCurrentMonster();
         if (currentMonster == null) {
-            client.sendSystemMessage(AnsiText.color("You have no available monsters.", AnsiText.RED));
+            client.sendGameMessage(AnsiText.color("You have no available monsters.", AnsiText.RED));
             return;
         }
 
@@ -97,12 +99,12 @@ public class Game {
         }
 
         if (selectedMove == null) {
-            client.sendSystemMessage(AnsiText.color("Invalid move. Your monster doesn't know '" + moveName + "'.", AnsiText.RED));
+            client.sendGameMessage(AnsiText.color("Invalid move. Your monster doesn't know '" + moveName + "'.", AnsiText.RED));
             return;
         }
 
         clientMoves.put(client, selectedMove);
-        client.sendSystemMessage(AnsiText.color("Your move '" + selectedMove.getName() + "' has been received.", AnsiText.GREEN));
+        client.sendGameMessage(AnsiText.color("Your move '" + selectedMove.getName() + "' has been received.", AnsiText.GREEN));
 
         if (clientMoves.size() == clients.size()) {
             processMoves();
@@ -204,38 +206,41 @@ public class Game {
         defendMon.setHealth(defendMon.getHealth() - damage);
 
         // Messages to attacker
-        attacker.sendSystemMessage(AnsiText.color("Your " + attackMon.getName() + " used " + move.getName() + "!", AnsiText.CYAN));
-        attacker.sendSystemMessage(AnsiText.color("It dealt " + damage + " damage to opponent's " + defendMon.getName() + ".", AnsiText.GREEN));
+        attacker.sendGameMessage(AnsiText.color("Your " + attackMon.getName() + " used " + move.getName() + "!", AnsiText.CYAN));
+        attacker.sendGameMessage(AnsiText.color("It dealt " + damage + " damage to opponent's " + defendMon.getName() + ".", AnsiText.GREEN));
 
         // Messages to defender
-        defender.sendSystemMessage(AnsiText.color("Opponent's " + attackMon.getName() + " used " + move.getName() + "!", AnsiText.CYAN));
-        defender.sendSystemMessage(AnsiText.color("It dealt " + damage + " damage to your " + defendMon.getName() + ".", AnsiText.RED));
+        defender.sendGameMessage(AnsiText.color("Opponent's " + attackMon.getName() + " used " + move.getName() + "!", AnsiText.CYAN));
+        defender.sendGameMessage(AnsiText.color("It dealt " + damage + " damage to your " + defendMon.getName() + ".", AnsiText.RED));
 
         if (defendMon.getHealth() <= 0) {
+          defendMon.setHealth(0);
+          defendMon.setIsFainted(true);
 
-          defender.sendSystemMessage(AnsiText.color("Your " + defendMon.getName() + " has fainted...", AnsiText.RED_BOLD));
-          attacker.sendSystemMessage(AnsiText.color(defender.getClientName() + "'s " + defendMon.getName() + " has fainted!", AnsiText.GREEN));
+          defender.sendGameMessage(AnsiText.color("Your " + defendMon.getName() + " has fainted...", AnsiText.RED_BOLD));
+          attacker.sendGameMessage(AnsiText.color(defender.getClientName() + "'s " + defendMon.getName() + " has fainted!", AnsiText.GREEN));
 
           Monster nextMonster = defender.getParty().findNextCurrent(defendMon);
           defender.getParty().setCurrentMonster(nextMonster);
 
           if (nextMonster != null) {
-            defender.sendSystemMessage(AnsiText.color("Your next monster is " + nextMonster.getName() + "!", AnsiText.GREEN_BOLD));
+            defender.sendGameMessage(AnsiText.color("Your next monster is " + nextMonster.getName() + "!", AnsiText.GREEN_BOLD));
           }
           return false;
         } 
         else {
-          defender.sendSystemMessage(AnsiText.color("Your " + defendMon.getName() + " has " + defendMon.getHealth() + " health remaining.", AnsiText.YELLOW));
+          defender.sendGameMessage(AnsiText.color("Your " + defendMon.getName() + " has " + defendMon.getHealth() + " health remaining.", AnsiText.YELLOW));
         }
 
         return true;
     }
 
     private int calculateDamage(Monster attacker, Monster defender, Move move) {
-        double baseDamage = move.getDamage() + attacker.getAttack();
+        double variability = 0.85 + (random.nextDouble() * 0.15);
+        double baseDamage = (move.getDamage() + attacker.getAttack()) / DAMAGE_MULTIPLIER;
         double typeFactor = Type.calculateFloat(move.getType(), defender.getType());
 
-        double damage = baseDamage * typeFactor;
+        double damage = baseDamage * typeFactor * variability;
 
         damage = Math.max(damage, 1);
 
@@ -249,23 +254,17 @@ public class Game {
     }
 
     public synchronized void handleClientDisconnection(ClientHandler disconnectedClient) {
-      System.out.println("HANDLING CLIENT DISCONNECTION");
       sendMessageToAll(AnsiText.color("Player " + disconnectedClient.getClientName() + " has disconnected.", AnsiText.RED));
-
-      ClientHandler remainingClient = null;
       for (ClientHandler client : clients) {
         if (!client.equals(disconnectedClient)) {
-          remainingClient = client;
+          sendMessageToAll(AnsiText.color("Player " + client.getClientName() + " wins by default!", AnsiText.GREEN_BRIGHT));
+          this.winnerName = client.getClientName();
+          this.loserName = disconnectedClient.getClientName();
           break;
         }
       }
 
-      if (remainingClient != null) {
-        sendMessageToAll(AnsiText.color("Player " + remainingClient.getClientName() + " wins by default!", AnsiText.GREEN_BRIGHT));
-        this.winnerName = remainingClient.getClientName();
-        this.loserName = disconnectedClient.getClientName();
-      } else {
-        this.winnerName = null;
+      if (this.winnerName == null){
         this.loserName = null;
       }
 

@@ -4,6 +4,7 @@ import com.pkg.app.party.monster.Monster;
 import java.util.ArrayList;
 import java.util.List;
 import com.pkg.app.server.Server.ClientHandler;
+import com.pkg.app.server.text.AnsiText;
 
 
 
@@ -28,7 +29,7 @@ public class Party {
 
   public boolean allMonstersFainted() {
     for (Monster monster : monsters) {
-      if (monster.getHealth() > 0) {
+      if (!monster.getIsFainted()) {
         return false;
       }
     }
@@ -37,7 +38,7 @@ public class Party {
 
   public Monster getCurrentMonster() {
     for (Monster monster : monsters) {
-      if (monster.getHealth() > 0) {
+      if (!monster.getIsFainted()) {
         return monster;
       }
     }
@@ -46,7 +47,7 @@ public class Party {
 
   public Monster findNextCurrent(Monster faintedMonster){
     for (Monster mon : monsters){
-      if (mon != faintedMonster && mon.getHealth() > 0){
+      if (mon != faintedMonster && !mon.getIsFainted()){
         return mon;
       }
     }
@@ -63,7 +64,8 @@ public class Party {
   public void listParty(ClientHandler clientHandler) {
     clientHandler.sendMessage("Your party:");
     for (Monster monster : monsters) {
-      clientHandler.sendMessage("- " + monster.getName() + 
+      String name = monster.getIsFainted() ? AnsiText.color(monster.getName(), AnsiText.RED_BACKGROUND) : monster.getName();
+      clientHandler.sendMessage("- " + name + 
           " (Health: " + monster.getHealth() + 
           ", Attack: " + monster.getAttack() + 
           ", Speed: " + monster.getSpeed() + 

@@ -1,11 +1,18 @@
 package com.pkg.app.party.monster;
 
-import java.util.*;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Map;
+import java.util.HashMap;
+import com.pkg.app.party.monster.movedirectory.MoveDirectory;
 
 public class Move {
 
   private String name;
   private int damage;
+  private int maxUses;
+  private int currentUses;
   private Type type;
 
   // Static map to hold moves for each type
@@ -15,11 +22,32 @@ public class Move {
     initializeMoves();
   }
 
-  public Move(String name, int damage, Type type) {
+  public Move(String name, int damage, Type type, int maxUses) {
     this.name = name;
     this.damage = damage;
     this.type = type;
+    this.maxUses = maxUses;
+    this.currentUses = 0;
   }
+
+  public int getMaxUses(){
+    return this.maxUses;
+  }
+
+  public int getCurrentUses(){
+    return this.currentUses;
+  }
+
+  public boolean canUse(){
+    return currentUses < maxUses;
+  }
+
+  public void use(){
+    if (canUse()){
+      currentUses++;
+    }
+  }
+
 
   public String getName() {
     return name;
@@ -36,64 +64,72 @@ public class Move {
   // Initialize moves for each type
   private static void initializeMoves() {
     // Fire type moves
-    List<Move> fireMoves = new ArrayList<>();
-    fireMoves.add(new Move("Flame Burst", 40, new Type("fire")));
-    fireMoves.add(new Move("Heat Wave", 50, new Type("fire")));
-    fireMoves.add(new Move("Ember", 30, new Type("fire")));
-    fireMoves.add(new Move("Fire Spin", 35, new Type("fire")));
-    typeMoves.put("fire", fireMoves);
+    typeMoves.put("fire", MoveDirectory.getFireMoves());
 
     // Water type moves
-    List<Move> waterMoves = new ArrayList<>();
-    waterMoves.add(new Move("Water Gun", 30, new Type("water")));
-    waterMoves.add(new Move("Bubble Beam", 35, new Type("water")));
-    waterMoves.add(new Move("Aqua Tail", 45, new Type("water")));
-    waterMoves.add(new Move("Hydro Pump", 50, new Type("water")));
-    typeMoves.put("water", waterMoves);
+    typeMoves.put("water", MoveDirectory.getWaterMoves());
 
     // Earth type moves
-    List<Move> earthMoves = new ArrayList<>();
-    earthMoves.add(new Move("Mud Slap", 30, new Type("earth")));
-    earthMoves.add(new Move("Earthquake", 50, new Type("earth")));
-    earthMoves.add(new Move("Sandstorm", 35, new Type("earth")));
-    earthMoves.add(new Move("Rock Slide", 40, new Type("earth")));
-    typeMoves.put("earth", earthMoves);
+    typeMoves.put("earth", MoveDirectory.getEarthMoves());
 
     // Air type moves
-    List<Move> airMoves = new ArrayList<>();
-    airMoves.add(new Move("Gust", 30, new Type("air")));
-    airMoves.add(new Move("Air Cutter", 35, new Type("air")));
-    airMoves.add(new Move("Aerial Ace", 40, new Type("air")));
-    airMoves.add(new Move("Hurricane", 50, new Type("air")));
-    typeMoves.put("air", airMoves);
+    typeMoves.put("air", MoveDirectory.getAirMoves());
 
     // Light type moves
-    List<Move> lightMoves = new ArrayList<>();
-    lightMoves.add(new Move("Flash", 30, new Type("light")));
-    lightMoves.add(new Move("Solar Beam", 50, new Type("light")));
-    lightMoves.add(new Move("Photon Blast", 45, new Type("light")));
-    lightMoves.add(new Move("Illuminate", 35, new Type("light")));
-    typeMoves.put("light", lightMoves);
+    typeMoves.put("light", MoveDirectory.getLightMoves());
 
     // Darkness type moves
-    List<Move> darknessMoves = new ArrayList<>();
-    darknessMoves.add(new Move("Shadow Sneak", 30, new Type("darkness")));
-    darknessMoves.add(new Move("Dark Pulse", 40, new Type("darkness")));
-    darknessMoves.add(new Move("Night Slash", 35, new Type("darkness")));
-    darknessMoves.add(new Move("Shadow Ball", 45, new Type("darkness")));
-    typeMoves.put("darkness", darknessMoves);
+    typeMoves.put("darkness", MoveDirectory.getDarknessMoves());
 
-    //TODO: GET MORE MOVES
   }
 
   // Method to get random moves for a given type
-  public static List<Move> getRandomMoves(String typeName, int numberOfMoves) {
-    List<Move> moves = typeMoves.get(typeName.toLowerCase());
-    if (moves == null || moves.size() < numberOfMoves) {
+  public static List<Move> getRandomMoves(String typeName, int num) {
+    // Number of moves to get from the specified type
+    int specifiedTypeMovesCount = num / 2;
+
+    // Number of random types to select
+    int randomTypeCount = num / 2;
+
+    // Create a list to hold the final moves
+    List<Move> selectedMoves = new ArrayList<>();
+
+    // Get moves from the specified type
+    List<Move> specifiedTypeMoves = typeMoves.get(typeName.toLowerCase());
+    if (specifiedTypeMoves == null || specifiedTypeMoves.size() < specifiedTypeMovesCount) {
       throw new IllegalArgumentException("Not enough moves for type " + typeName);
     }
 
-    Collections.shuffle(moves);
-    return new ArrayList<>(moves.subList(0, numberOfMoves));
+    // Shuffle and select 2 moves from the specified type
+    Collections.shuffle(specifiedTypeMoves);
+    selectedMoves.addAll(specifiedTypeMoves.subList(0, specifiedTypeMovesCount));
+
+    // Get a list of other types excluding the specified type
+    List<String> otherTypes = new ArrayList<>(typeMoves.keySet());
+    otherTypes.remove(typeName.toLowerCase());
+
+    if (otherTypes.size() < randomTypeCount) {
+      throw new IllegalArgumentException("Not enough other types to select from.");
+    }
+
+    // Shuffle the list of other types
+    Collections.shuffle(otherTypes);
+
+    // For each of the random types, select 1 move
+    for (int i = 0; i < randomTypeCount; i++) {
+      String randomType = otherTypes.get(i);
+      List<Move> movesOfRandomType = typeMoves.get(randomType);
+
+      if (movesOfRandomType == null || movesOfRandomType.isEmpty()) {
+        throw new IllegalArgumentException("No moves available for type " + randomType);
+      }
+
+      Collections.shuffle(movesOfRandomType);
+      selectedMoves.add(movesOfRandomType.get(0));
+    }
+
+    Collections.shuffle(selectedMoves);
+
+    return selectedMoves;
   }
 }

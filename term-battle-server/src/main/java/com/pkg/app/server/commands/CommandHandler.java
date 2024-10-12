@@ -38,7 +38,6 @@ public class CommandHandler {
     gameCommands.put("type", new TypeInfoCommand());
     gameCommands.put("moves", new MovesCommand());
     gameCommands.put("attack", new AttackCommand());
-    // TODO: Add more commands
   }
 
   private void registerLobbyCommands() {
@@ -63,7 +62,6 @@ public class CommandHandler {
     roomCommands.put("leave", new LeaveCommand());
     roomCommands.put("start", new StartCommand());
     roomCommands.put("ready", new ReadyCommand());
-    // TODO: Add more commands
   }
 
   // Method to execute commands
@@ -189,8 +187,8 @@ public class CommandHandler {
         }
         coloredWeaknesses = weaknessesBuilder.toString();
       }
-
-      String message = "Type: " + coloredType + ", Weaknesses: " + coloredWeaknesses;
+      String coloredTypeLabel = AnsiText.color("Type: ", AnsiText.WHITE);
+      String message = coloredTypeLabel + coloredType + ", Weaknesses: " + coloredWeaknesses;
       client.sendSystemMessage(message);
     }
   }

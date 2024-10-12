@@ -160,7 +160,7 @@ public abstract class DatabaseManager {
     List<Monster> monsters = new ArrayList<>();
     try {
       con = getConnection();
-      PreparedStatement stmt = con.prepareStatement("SELECT * FROM monsters ORDER BY RANDOM() LIMIT 1");
+      PreparedStatement stmt = con.prepareStatement("SELECT * FROM monsters ORDER BY RANDOM() LIMIT 4");
       ResultSet rs = stmt.executeQuery();
       while (rs.next()) {
         String name = rs.getString("monster_name");

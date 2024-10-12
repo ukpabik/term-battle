@@ -8,6 +8,7 @@ import com.pkg.app.party.Party;
 import com.pkg.app.party.monster.Monster;
 import com.pkg.app.game.Game;
 import com.pkg.app.server.Logger;
+import com.pkg.app.server.text.AnsiText;
 
 
 // This class represents a room in the game. It has a list of clients in the room
@@ -113,7 +114,11 @@ public class Room {
           if (party != null) {
             partyList.append(c.getClientName()).append("'s Party:\n");
             for (Monster monster : party.getMonsters()) {
-              partyList.append("- ").append(monster.getName())
+              String monsterName = monster.getName();
+              if (monster.getIsFainted()){
+                monsterName = AnsiText.color(monsterName, AnsiText.RED_BACKGROUND);
+              }
+              partyList.append("- ").append(monsterName)
                 .append(" (").append(monster.getType().toString())
                 .append(", Health: ").append(monster.getHealth())
                 .append(", Attack: ").append(monster.getAttack())
