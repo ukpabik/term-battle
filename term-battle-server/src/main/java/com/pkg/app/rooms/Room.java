@@ -114,7 +114,7 @@ public class Room {
             partyList.append(c.getClientName()).append("'s Party:\n");
             for (Monster monster : party.getMonsters()) {
               partyList.append("- ").append(monster.getName())
-                .append(" (").append(monster.getType())
+                .append(" (").append(monster.getType().toString())
                 .append(", Health: ").append(monster.getHealth())
                 .append(", Attack: ").append(monster.getAttack())
                 .append(", Speed: ").append(monster.getSpeed()).append(")\n");
@@ -138,7 +138,7 @@ public class Room {
     else{
       globalRoomBroadcast("Battle started!");
 
-      this.currentGame = new Game(new ArrayList<>(clients));
+      this.currentGame = new Game(new ArrayList<>(clients), this);
       Logger.info("Game started in room '" + roomName + "'.");
     }
 
@@ -150,6 +150,10 @@ public class Room {
 
   public void setHost(ClientHandler host){
     this.host = host;
+  }
+
+  public void setGame(Game game){
+    this.currentGame = game;
   }
 
   // If a user leaves the room, switch the host

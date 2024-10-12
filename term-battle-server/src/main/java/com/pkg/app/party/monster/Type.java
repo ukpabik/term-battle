@@ -3,6 +3,7 @@ package com.pkg.app.party.monster;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import com.pkg.app.server.text.TypeColor;
 
 public class Type {
   private String name;
@@ -54,7 +55,8 @@ public class Type {
 
   @Override
   public String toString() {
-    return "Type: " + this.name + ", Weaknesses: " + this.weaknesses;
+    return "Type: " + TypeColor.colorType(this.name);
   }
+
 }
 

@@ -76,8 +76,9 @@ public class Server implements Runnable {
     private String clientName;
     private Room currentRoom;
     private Party party;
-    private boolean isReady = false;
     private CommandHandler commandHandler;
+    private boolean isReady = false;
+    
 
     public ClientHandler(Socket socket) {
       this.socket = socket;
@@ -131,6 +132,7 @@ public class Server implements Runnable {
         // Listen for messages from the client
         while ((message = in.readLine()) != null) {
           message = message.strip();
+          if (message.length() < 1) continue;
           if (message.equalsIgnoreCase("exit")) {
             break;
           }
@@ -184,7 +186,7 @@ public class Server implements Runnable {
     // Toggles whether the client is ready or not
     public void toggleReady() {
       this.isReady = !this.isReady;
-      sendSystemMessage("You are now " + (isReady ? AnsiText.color("ready", AnsiText.GREEN) : AnsiText.color("not ready", AnsiText.RED)));
+      sendSystemMessage("You are now " + (isReady ? AnsiText.color("ready.", AnsiText.GREEN) : AnsiText.color("not ready.", AnsiText.RED)));
     }
 
     // Broadcasts a message to all clients except the sender
@@ -310,11 +312,6 @@ public class Server implements Runnable {
       this.party.listParty(this);
     }
 
-    // Lists all available commands to the user
-    public void listHelp() {
-      this.sendSystemMessage("Commands: " + String.join(", ", commandHandler.getCommands().keySet()));
-    }
-
     // Closes the connection and removes the client from the set
     public void closeConnection() {
       try {
@@ -323,11 +320,12 @@ public class Server implements Runnable {
           sendSystemMessage("You have been disconnected.");
         }
 
-        if (getCurrentRoom() != null) {
-          leaveCurrentRoom();
-        }
         if (getCurrentGame() != null){
           getCurrentGame().handleClientDisconnection(this);
+        }
+
+        if (getCurrentRoom() != null) {
+          leaveCurrentRoom();
         }
 
         clients.remove(this);

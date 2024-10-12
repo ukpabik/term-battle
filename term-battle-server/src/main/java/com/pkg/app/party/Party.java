@@ -21,6 +21,10 @@ public class Party {
   public List<Monster> getMonsters() {
     return monsters;
   }
+  public void setMonsters(List<Monster> monsters){
+    this.monsters = monsters;
+    this.currentMonster = monsters.get(0);
+  }
 
   public boolean allMonstersFainted() {
     for (Monster monster : monsters) {
@@ -63,8 +67,7 @@ public class Party {
           " (Health: " + monster.getHealth() + 
           ", Attack: " + monster.getAttack() + 
           ", Speed: " + monster.getSpeed() + 
-          ", Type: " + monster.getType().getName() + ")");
+          ", " + monster.getType().toString() + ")");
     }
   }
-
 }
