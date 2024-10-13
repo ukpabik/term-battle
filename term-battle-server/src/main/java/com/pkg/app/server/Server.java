@@ -345,11 +345,12 @@ public class Server implements Runnable {
     }
 
     private boolean validateUser(String username, String password) {
-      try {
-        return DatabaseManager.validateUser(username, password);
-      } 
-      catch (SQLException e) {
-        Logger.error("Database error during user validation: " + e.getMessage());
+      boolean validated = DatabaseManager.validateUser(username, password);
+      if (validated){
+        return true;
+      }
+      else{
+        Logger.error("Database error during user validation");
         return false;
       }
     }

@@ -3,6 +3,7 @@ package com.pkg.app.client;
 import java.net.*;
 import java.io.*;
 import java.util.Scanner;
+import java.util.NoSuchElementException;
 public class Client {
   private Socket socket;
   private String name;
@@ -62,7 +63,14 @@ public class Client {
     Scanner scan = new Scanner(System.in);
 
     while (true) {
-      String input = scan.nextLine();
+      String input = "";
+      try{
+        input = scan.nextLine();
+      }
+      catch(NoSuchElementException e){
+        System.out.println("User disconnected suddenly. Closing all resources...");
+        break;
+      }
       if (input.equalsIgnoreCase("exit")) {
         break;
       }
