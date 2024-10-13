@@ -150,9 +150,6 @@ public abstract class DatabaseManager {
           if (passed) {
             System.out.println(AnsiText.color("Successfully authenticated: " + name, AnsiText.GREEN));
           } 
-          else {
-            System.out.println(AnsiText.color("Authentication failed: " + name, AnsiText.RED));
-          }
           return passed;
         } 
         else {
