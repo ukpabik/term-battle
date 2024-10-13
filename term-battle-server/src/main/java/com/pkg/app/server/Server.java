@@ -15,6 +15,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
 import com.pkg.app.server.Logger;
 import com.pkg.app.game.Game;
+import java.util.NoSuchElementException;
 
 public class Server implements Runnable {
 
@@ -48,11 +49,13 @@ public class Server implements Runnable {
     while (true) {
       Socket clientSocket = serverSocket.accept();
       ClientHandler clientHandler = new ClientHandler(clientSocket);
-      clients.add(clientHandler);
-      Logger.info("Client connected: " + clientSocket.getInetAddress());
-      Logger.info("Total Connections: " + clients.size());
-      // Starts a new thread each time a new user joins
-      new Thread(clientHandler).start();
+      if (clientHandler.authenticated){
+	      clients.add(clientHandler);
+	      Logger.info("Client connected: " + clientSocket.getInetAddress());
+	      Logger.info("Total Connections: " + clients.size());
+	      // Starts a new thread each time a new user joins
+	      new Thread(clientHandler).start();
+      }
     }
   }
 
@@ -78,6 +81,7 @@ public class Server implements Runnable {
     private Party party;
     private CommandHandler commandHandler;
     private boolean isReady = false;
+    private boolean authenticated = false;
     
 
     public ClientHandler(Socket socket) {
@@ -91,14 +95,31 @@ public class Server implements Runnable {
         out = new PrintWriter(new OutputStreamWriter(socket.getOutputStream(), StandardCharsets.UTF_8), true);
 
         // Set the client's name
-        this.clientName = in.readLine().strip();
+	String nameLine = in.readLine();
+	if (nameLine == null){
+		Logger.error("Client disconnected before providing a name.");
+		closeConnection();
+		return;
+	}
+
+        this.clientName = nameLine.strip();
 
         // Check if the user and password are in the system
         while (attempts < MAX_ATTEMPTS) {
+	
 
-          String password = in.readLine().strip();
+          String password = in.readLine();
+	  if (password == null){
+		  Logger.error("Client disconnected before providing a password.");
+		  closeConnection();
+		  return;
+	  }
+
+	  password = password.strip();
+
 
           if (validateUser(clientName, password)) {
+	    this.authenticated = true;	
             out.println(AnsiText.color("Login successful... You are now connected!", AnsiText.GREEN));
             out.println(AnsiText.color("Type /help for a list of commands.", AnsiText.YELLOW));
             Logger.info(clientName + " has connected to the server.");
@@ -182,6 +203,11 @@ public class Server implements Runnable {
     public void setParty(Party party) {
       this.party = party;
     }
+
+    public boolean getAuthenticated(){
+	    return this.authenticated;
+    }
+
 
     // Returns whether the client is ready or not
     public boolean getReady() {
