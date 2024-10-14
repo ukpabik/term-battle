@@ -6,16 +6,13 @@ import java.util.Map;
 import com.pkg.app.rooms.Room;
 import com.pkg.app.party.monster.Monster;
 import com.pkg.app.party.Party;
-import java.sql.SQLException;
 import com.pkg.app.server.commands.CommandHandler;
 import com.pkg.app.server.text.AnsiText;
 import java.nio.charset.StandardCharsets;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
-import com.pkg.app.server.Logger;
 import com.pkg.app.game.Game;
-import java.util.NoSuchElementException;
 
 public class Server implements Runnable {
 
@@ -50,11 +47,11 @@ public class Server implements Runnable {
       Socket clientSocket = serverSocket.accept();
       ClientHandler clientHandler = new ClientHandler(clientSocket);
       if (clientHandler.authenticated){
-	      clients.add(clientHandler);
-	      Logger.info("Client connected: " + clientSocket.getInetAddress());
-	      Logger.info("Total Connections: " + clients.size());
-	      // Starts a new thread each time a new user joins
-	      new Thread(clientHandler).start();
+        clients.add(clientHandler);
+        Logger.info("Client connected: " + clientSocket.getInetAddress());
+        Logger.info("Total Connections: " + clients.size());
+        // Starts a new thread each time a new user joins
+        new Thread(clientHandler).start();
       }
     }
   }
@@ -82,7 +79,7 @@ public class Server implements Runnable {
     private CommandHandler commandHandler;
     private boolean isReady = false;
     private boolean authenticated = false;
-    
+
 
     public ClientHandler(Socket socket) {
       this.socket = socket;
@@ -95,31 +92,31 @@ public class Server implements Runnable {
         out = new PrintWriter(new OutputStreamWriter(socket.getOutputStream(), StandardCharsets.UTF_8), true);
 
         // Set the client's name
-	String nameLine = in.readLine();
-	if (nameLine == null){
-		Logger.error("Client disconnected before providing a name.");
-		closeConnection();
-		return;
-	}
+        String nameLine = in.readLine();
+        if (nameLine == null){
+          Logger.error("Client disconnected before providing a name.");
+          closeConnection();
+          return;
+        }
 
         this.clientName = nameLine.strip();
 
         // Check if the user and password are in the system
         while (attempts < MAX_ATTEMPTS) {
-	
+
 
           String password = in.readLine();
-	  if (password == null){
-		  Logger.error("Client disconnected before providing a password.");
-		  closeConnection();
-		  return;
-	  }
+          if (password == null){
+            Logger.error("Client disconnected before providing a password.");
+            closeConnection();
+            return;
+          }
 
-	  password = password.strip();
+          password = password.strip();
 
 
           if (validateUser(clientName, password)) {
-	    this.authenticated = true;	
+            this.authenticated = true;	
             out.println(AnsiText.color("Login successful... You are now connected!", AnsiText.GREEN));
             out.println(AnsiText.color("Type /help for a list of commands.", AnsiText.YELLOW));
             Logger.info(clientName + " has connected to the server.");
@@ -205,7 +202,7 @@ public class Server implements Runnable {
     }
 
     public boolean getAuthenticated(){
-	    return this.authenticated;
+      return this.authenticated;
     }
 
 
