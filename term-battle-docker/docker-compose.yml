@@ -25,6 +25,5 @@ services:
 
 networks:
   term-battle-network:
-    external: true
-    name: term-battle-network
+    driver: bridge
 
