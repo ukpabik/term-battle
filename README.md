@@ -7,7 +7,8 @@ TermBattle is a real-time multiplayer game that runs entirely in the terminal. P
 
 ## Table of Contents
 - [Demo](#demo)
-- [Installation](#installation)
+- [Setup](#setup)
+- [Prerequisites](#prerequisites)
 - [Running the Application](#running-the-application)
 
 ---
@@ -20,11 +21,14 @@ TermBattle is a real-time multiplayer game that runs entirely in the terminal. P
 ---
 
 
-## Installation
-Prerequisites:
-- Java: JDK 21 or higher. Download JDK [here](https://www.oracle.com/java/technologies/downloads/).
-- Apache Maven: For build and dependency management. Download Maven [here](https://maven.apache.org/download.cgi).
-- PostgreSQL: For the server-side database. Download PostgreSQL [here](https://www.postgresql.org/download/) or sign up on Supabase for a free cloud database [here](https://supabase.com/)! 
+## Setup
+### Prerequisites:
+- **Docker & Docker Compose:** [Install Docker](https://www.docker.com/get-started)
+- **PostgreSQL:** For the server-side database. Download PostgreSQL [here](https://www.postgresql.org/download/) or sign up on Supabase for a free cloud database [here](https://supabase.com/)!
+
+Optional (Manual Installation)
+- **Java:** JDK 21 or higher. Download JDK [here](https://www.oracle.com/java/technologies/downloads/).
+- **Apache Maven:** For build and dependency management. Download Maven [here](https://maven.apache.org/download.cgi).
 
 To set up the project, follow these steps:
 
@@ -35,52 +39,109 @@ To set up the project, follow these steps:
     cd termbattle
     ```
 
-2. **Install Server Dependencies**:
+2. **Choose your Setup Method**:
 
-    Navigate to the server directory and install the required Maven packages:
-    ```sh
+- [A. Docker-Based Setup](#a-docker-based-setup)
+- [B. Manual Setup](#b-manual-setup)
+  
+
+#### A. Docker-Based Setup
+
+1. **Configure Environment Variables:**
+
+    Create a `.env` file in the `term-battle-server` directory:
+
+    ```bash
+    cd term-battle-server
+    touch .env
+    ```
+
+    Add the following to `.env`:
+
+    ```env
+    DB_URL=YOUR_DB_URL
+    ```
+
+    Replace `YOUR_DB_URL` with your actual PostgreSQL connection string.
+
+#### B. Manual Setup
+
+1. **Install Server Dependencies:**
+
+    ```bash
     cd term-battle-server
     mvn clean install
     ```
 
+2. **Install Client Dependencies:**
 
-4. **Install Client Dependencies**:
-
-    Navigate to the client directory and install the required Maven packages:
-    ```sh
+    ```bash
     cd ../term-battle-client
     mvn clean install
     ```
 
+3. **Configure Environment Variables:**
 
-6. **Configure Environment Variables**:
+    Create a `.env` file in the `term-battle-server` directory:
 
-    Create a `.env` file in the `term-battle-server` directory with the following variables:
-
-    ```plaintext
-    DB_URL = YOUR_DB_URL
+    ```bash
+    cd ../term-battle-server
+    touch .env
     ```
-    
+
+    Add the following to `.env`:
+
+    ```env
+    DB_URL=YOUR_DB_URL
+    ```
+
+    Replace `YOUR_DB_URL` with your actual PostgreSQL connection string.
+
 ## Running the Application
 
-1. **Start the Server**:
+### A. Using Docker Compose
 
-    In the `term-battle-server` directory, start the server:
+1. **Start the Server in Detached Mode:**
 
-    ```sh
+    ```bash
+    docker-compose up -d server
+    ```
+
+2. **Run the Client Interactively:**
+
+    ```bash
+    docker-compose run --rm client
+    ```
+
+    **Explanation:**
+    - The server runs in the background.
+    - The client runs interactively, allowing you to type commands.
+
+3. **Stop the Application:**
+
+    ```bash
+    docker-compose down
+    ```
+
+### B. Manual Execution
+
+1. **Start the Server:**
+
+    ```bash
+    cd term-battle-server
     mvn exec:java
     ```
 
-2. **Start the Client**:
+2. **Start the Client:**
 
-    In the `term-battle-client` directory, start the server:
+    Open a new terminal window/tab:
 
-    ```sh
+    ```bash
+    cd term-battle-client
     mvn exec:java
     ```
-    
-Once the client starts, you can type /help to see a list of all available commands.
 
+    **Note:** Once the client starts, type `/help` to see a list of all available commands.
 ## About This Project
 
 I'm having a lot of fun developing **TermBattle**, and it's giving me a way to learn more about things I am interested in, including: 
