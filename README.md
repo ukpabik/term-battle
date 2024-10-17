@@ -52,6 +52,15 @@ To set up the project, follow these steps:
 
     Replace `YOUR_DB_URL` with your actual PostgreSQL connection string.
 
+3. **Downloading Dependencies**
+
+   Navigate to the `docker-base` directory:
+
+    ```bash
+    cd docker-base
+    docker build -t maven:3.9.9-jdk-21 .
+    ```
+
 
 ## Running the Application
 
