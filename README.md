@@ -64,13 +64,19 @@ To set up the project, follow these steps:
 
 ## Running the Application
 
-1. **Start the Server in Detached Mode:**
+1. Make sure you are in the `term-battle-docker` directory!
+
+   ```bash
+    cd ../term-battle-docker
+    ```
+
+3. **Start the Server in Detached Mode:**
 
     ```bash
     docker-compose up -d server
     ```
 
-2. **Run the Client Interactively:**
+4. **Run the Client Interactively:**
 
     ```bash
     docker-compose run --rm client
@@ -80,14 +86,15 @@ To set up the project, follow these steps:
     - The server runs in the background.
     - The client runs interactively, allowing you to type commands.
 
-3. **Stop the Application:**
+5. **Stop the Application:**
 
     ```bash
     docker-compose down
     ```
 
 
-    **Note:** Once the client starts, type `/help` to see a list of all available commands.
+**Note:** Once the client starts, type `/help` to see a list of all available commands.
+
 ## About This Project
 
 I'm having a lot of fun developing **TermBattle**, and it's giving me a way to learn more about things I am interested in, including: 
