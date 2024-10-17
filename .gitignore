@@ -1,4 +1,4 @@
-target/
+**/target/
 pom.xml.tag
 pom.xml.releaseBackup
 pom.xml.versionsBackup
@@ -42,7 +42,7 @@ hs_err_pid*
 replay_pid*
 
 # env variables
-.env
+**/.env
 
 # Visual Studio Code
 .vscode/*

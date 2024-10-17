@@ -37,7 +37,7 @@ public class Main {
           System.out.println("Password must be at least 4 characters.");
         }
       }
-      Client c = new Client("127.0.0.1", 8080, name, password);
+      Client c = new Client("term-battle-server", 8080, name, password);
       // Start the listener thread
       new Thread(new Runnable() {
         @Override

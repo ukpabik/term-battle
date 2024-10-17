@@ -1,0 +1,30 @@
+services:
+  server:
+    image: term-battle-server
+    build:
+      context: ../term-battle-server
+    container_name: term-battle-server
+    env_file:
+      - ..\term-battle-server\.env
+    ports:
+      - "8080:8080"
+    networks:
+      - term-battle-network
+
+  client:
+    image: term-battle-client
+    build:
+      context: ../term-battle-client
+    container_name: term-battle-client
+    networks:
+      - term-battle-network
+    stdin_open: true
+    tty: true  
+    depends_on:
+      - server
+
+networks:
+  term-battle-network:
+    external: true
+    name: term-battle-network
+
