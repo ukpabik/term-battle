@@ -7,7 +7,8 @@ TermBattle is a real-time multiplayer game that runs entirely in the terminal. P
 
 ## Table of Contents
 - [Demo](#demo)
-- [Installation](#installation)
+- [Setup](#setup)
+- [Prerequisites](#prerequisites)
 - [Running the Application](#running-the-application)
 
 ---
@@ -20,11 +21,10 @@ TermBattle is a real-time multiplayer game that runs entirely in the terminal. P
 ---
 
 
-## Installation
-Prerequisites:
-- Java: JDK 21 or higher. Download JDK [here](https://www.oracle.com/java/technologies/downloads/).
-- Apache Maven: For build and dependency management. Download Maven [here](https://maven.apache.org/download.cgi).
-- PostgreSQL: For the server-side database. Download PostgreSQL [here](https://www.postgresql.org/download/) or sign up on Supabase for a free cloud database [here](https://supabase.com/)! 
+## Setup
+### Prerequisites:
+- **Docker & Docker Compose:** [Install Docker](https://www.docker.com/get-started)
+- **PostgreSQL:** For the server-side database. Download PostgreSQL [here](https://www.postgresql.org/download/) or sign up on Supabase for a free cloud database [here](https://supabase.com/)!
 
 To set up the project, follow these steps:
 
@@ -35,52 +35,50 @@ To set up the project, follow these steps:
     cd termbattle
     ```
 
-2. **Install Server Dependencies**:
+2. **Configure Environment Variables:**
 
-    Navigate to the server directory and install the required Maven packages:
-    ```sh
+    Create a `.env` file in the `term-battle-server` directory:
+
+    ```bash
     cd term-battle-server
-    mvn clean install
+    touch .env
     ```
 
+    Add the following to `.env`:
 
-4. **Install Client Dependencies**:
-
-    Navigate to the client directory and install the required Maven packages:
-    ```sh
-    cd ../term-battle-client
-    mvn clean install
+    ```env
+    DB_URL=YOUR_DB_URL
     ```
 
+    Replace `YOUR_DB_URL` with your actual PostgreSQL connection string.
 
-6. **Configure Environment Variables**:
 
-    Create a `.env` file in the `term-battle-server` directory with the following variables:
-
-    ```plaintext
-    DB_URL = YOUR_DB_URL
-    ```
-    
 ## Running the Application
 
-1. **Start the Server**:
+1. **Start the Server in Detached Mode:**
 
-    In the `term-battle-server` directory, start the server:
-
-    ```sh
-    mvn exec:java
+    ```bash
+    docker-compose up -d server
     ```
 
-2. **Start the Client**:
+2. **Run the Client Interactively:**
 
-    In the `term-battle-client` directory, start the server:
-
-    ```sh
-    mvn exec:java
+    ```bash
+    docker-compose run --rm client
     ```
-    
-Once the client starts, you can type /help to see a list of all available commands.
 
+    **Explanation:**
+    - The server runs in the background.
+    - The client runs interactively, allowing you to type commands.
+
+3. **Stop the Application:**
+
+    ```bash
+    docker-compose down
+    ```
+
+
+    **Note:** Once the client starts, type `/help` to see a list of all available commands.
 ## About This Project
 
 I'm having a lot of fun developing **TermBattle**, and it's giving me a way to learn more about things I am interested in, including: 
